@@ -1,0 +1,67 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @font-face{
+    font-family:'Poppins';
+    src:url('/usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf') format('truetype');
+    font-weight:700;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1400px;height:400px;background:transparent}
+  .row{
+    width:1400px;height:400px;
+    display:flex;align-items:center;gap:40px;
+    padding:0 20px;
+    font-family:'Poppins',sans-serif;
+  }
+  .badge{
+    width:320px;height:320px;border-radius:70px;
+    background:#2563eb;
+    display:flex;align-items:center;justify-content:center;
+    flex:none;
+  }
+  .word{
+    display:flex;flex-direction:column;justify-content:center;
+  }
+  .type{
+    font-family:'Poppins',sans-serif;
+    font-weight:700;
+    font-size:176px;
+    line-height:1;
+    letter-spacing:-4px;
+    white-space:nowrap;
+  }
+  .ro{color:#2563eb}
+  .trainer{color:#1e293b}
+  .flagbar{
+    display:flex;height:14px;width:200px;border-radius:7px;overflow:hidden;margin-top:18px;margin-left:4px;
+  }
+  .flagbar span{flex:1}
+</style>
+</head>
+<body>
+  <div class="row">
+    <div class="badge">
+      <svg width="230" height="230" viewBox="0 0 512 512">
+        <path d="M144 208 96 96l115.2 73.6" fill="#e8ecf3"/>
+        <path d="M368 208 416 96l-115.2 73.6" fill="#e8ecf3"/>
+        <ellipse cx="256" cy="291.2" rx="153.6" ry="137.6" fill="#e8ecf3"/>
+        <ellipse cx="256" cy="329.6" rx="73.6" ry="54.4" fill="#fbfcfe"/>
+        <circle cx="201.6" cy="278.4" r="24" fill="#1e293b"/>
+        <circle cx="310.4" cy="278.4" r="24" fill="#1e293b"/>
+        <ellipse cx="256" cy="339.2" rx="24" ry="17.6" fill="#1e293b"/>
+      </svg>
+    </div>
+    <div class="word">
+      <div class="type"><span class="ro">Ro</span><span class="trainer">Trainer</span></div>
+      <div class="flagbar">
+        <span style="background:#002B7F"></span>
+        <span style="background:#FCD116"></span>
+        <span style="background:#CE1126"></span>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="UTF-8">
+<style>
+  @font-face{
+    font-family:'Poppins';
+    src:url('/usr/share/fonts/truetype/google-fonts/Poppins-Bold.ttf') format('truetype');
+    font-weight:700;
+  }
+  @font-face{
+    font-family:'Poppins';
+    src:url('/usr/share/fonts/truetype/google-fonts/Poppins-Medium.ttf') format('truetype');
+    font-weight:500;
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html,body{width:1024px;height:500px;overflow:hidden}
+  .stage{
+    width:1024px;height:500px;position:relative;
+    background:linear-gradient(135deg,#3b76f0 0%,#2563eb 46%,#1a3f8f 100%);
+    font-family:'Poppins',sans-serif;
+  }
+  /* corner tricolor flag triangle */
+  .ribbon{
+    position:absolute;top:0;right:0;width:150px;height:150px;
+    clip-path:polygon(100% 0,100% 100%,0 0);
+    background:linear-gradient(135deg,#002B7F 0%,#002B7F 33.3%,#FCD116 33.3%,#FCD116 66.6%,#CE1126 66.6%,#CE1126 100%);
+    opacity:0.9;
+  }
+
+  .glow{
+    position:absolute;right:60px;top:50%;transform:translateY(-50%);
+    width:420px;height:420px;border-radius:50%;
+    background:radial-gradient(circle,rgba(255,255,255,0.16) 0%,rgba(255,255,255,0) 70%);
+  }
+
+  .content{
+    position:absolute;left:66px;top:0;bottom:0;
+    display:flex;flex-direction:column;justify-content:center;
+    max-width:520px;
+  }
+  .type{
+    font-weight:700;font-size:96px;line-height:1;letter-spacing:-2px;color:#fff;
+  }
+  .type .ro{color:#FCD116}
+  .tag{
+    margin-top:22px;font-weight:500;font-size:29px;color:#dbe6ff;line-height:1.35;
+  }
+  .flagbar{display:flex;height:10px;width:150px;border-radius:5px;overflow:hidden;margin-top:26px}
+  .flagbar span{flex:1}
+
+  .mascot-wrap{
+    position:absolute;right:78px;top:50%;transform:translateY(-50%);
+    width:330px;height:330px;border-radius:50%;
+    background:rgba(255,255,255,0.10);
+    display:flex;align-items:center;justify-content:center;
+  }
+</style>
+</head>
+<body>
+<div class="stage">
+  <div class="ribbon"></div>
+  <div class="glow"></div>
+
+  <div class="mascot-wrap">
+    <svg width="300" height="300" viewBox="0 0 96 96">
+      <ellipse cx="48" cy="52" rx="30" ry="27" fill="#e8ecf3"/>
+      <path d="M22 34 12 14 34 28Z" fill="#e8ecf3"/>
+      <path d="M74 34 84 14 62 28Z" fill="#e8ecf3"/>
+      <path d="M22 34 16 20 32 30Z" fill="#c7d0e0"/>
+      <path d="M74 34 80 20 64 30Z" fill="#c7d0e0"/>
+      <ellipse cx="48" cy="58" rx="14" ry="10" fill="#fbfcfe"/>
+      <path d="M34 54c2-3 6-3 8 0M50 54c2-3 6-3 8 0" stroke="#1e293b" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+      <ellipse cx="48" cy="62" rx="4" ry="3" fill="#1e293b"/>
+      <path d="M42 66c4 5 12 5 16 0" stroke="#1e293b" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+      <path d="M32 68c-3 3-3 7 0 9M64 68c3 3 3 7 0 9" stroke="#c7d0e0" stroke-width="2" stroke-linecap="round" fill="none"/>
+    </svg>
+  </div>
+
+  <div class="content">
+    <div class="type"><span class="ro">Ro</span>Trainer</div>
+    <div class="tag">Türkçe anlatımla Romence öğren:<br>kelime, fiil çekimi, gramer, sınav.</div>
+    <div class="flagbar">
+      <span style="background:#002B7F"></span>
+      <span style="background:#FCD116"></span>
+      <span style="background:#CE1126"></span>
+    </div>
+  </div>
+</div>
+</body>
+</html>
