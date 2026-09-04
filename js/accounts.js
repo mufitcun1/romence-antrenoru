@@ -46,7 +46,7 @@ async function hashPassword(password, saltHex){
 async function createAccountRecord(key, displayName, password){
   const salt = randomSaltHex();
   const hash = await hashPassword(password, salt);
-  const data = {mastery:{}, testHistory:[], sessionsCompleted:0};
+  const data = migrateState({mastery:{}, testHistory:[], sessionsCompleted:0});
   ACCOUNTS.accounts[key] = { displayName, salt, hash, data };
   return {ok:true, key};
 }
@@ -78,7 +78,7 @@ async function adminLogin(password){
   if(!acc || !acc.hash){
     const salt = randomSaltHex();
     const hash = await hashPassword(password, salt);
-    const data = (acc && acc.data) ? acc.data : {mastery:{}, testHistory:[], sessionsCompleted:0};
+    const data = migrateState((acc && acc.data) ? acc.data : {mastery:{}, testHistory:[], sessionsCompleted:0});
     ACCOUNTS.accounts['admin'] = { displayName:"Admin", salt, hash, data };
     pendingSave = true;
     return {ok:true, key:'admin'};
@@ -100,9 +100,9 @@ async function loginAccount(usernameRaw, password){
 function enterAsUser(key){
   currentUser = key;
   STATE = ACCOUNTS.accounts[key].data;
-  if(!STATE.mastery) STATE.mastery = {};
-  if(!STATE.testHistory) STATE.testHistory = [];
-  if(!STATE.sessionsCompleted) STATE.sessionsCompleted = STATE.sessionsCompleted||0;
+  /* Eski sürümden kalan hesaplarda oyunlaştırma alanları (xp/streak/dailyGoal)
+     yoktur; migrateState eksikleri tamamlar, var olan ilerlemeye dokunmaz. */
+  migrateState(STATE);
   try{ localStorage.setItem('romence_user', key); }catch(e){}
   showAppChrome(true);
   switchTab('practice');
@@ -120,6 +120,9 @@ function showAppChrome(show){
   const lr = document.getElementById('levelrow');
   const tb = document.getElementById('tabsRow');
   const ub = document.getElementById('userbar');
+  const gb = document.getElementById('gamebar');
+  if(gb) gb.style.display = show? '' : 'none';
+  if(show && typeof updateGameBar === 'function') updateGameBar();
   if(lr) lr.style.display = show? '' : 'none';
   if(tb) tb.style.display = show? '' : 'none';
   if(ub){
