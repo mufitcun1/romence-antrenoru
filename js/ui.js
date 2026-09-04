@@ -96,6 +96,7 @@ function nextExercise(){
   else if(item.type==="lis") currentEx = exerciseForListening(item.data);
   else if(item.type==="cum") currentEx = exerciseForSentence(item.data);
   else currentEx = exerciseForGrammar(item.data);
+  if(item._retry) currentEx.isRetry = true;   // tur sonunda geri gelen yanlış soru
   renderExercise();
 }
 
@@ -104,7 +105,7 @@ function renderExercise(){
   const idx = sessionIdx+1;
   const exPct = Math.round((idx/total)*100);
   let body = `<div class="exprogress"><div class="track"><div class="fill" style="width:${exPct}%"></div></div>
-    <div class="caption">${testMode?"Deneme Sınavı":"Pratik"} — Soru ${idx}/${total}</div></div>`;
+    <div class="caption">${testMode?"Deneme Sınavı":"Pratik"} — Soru ${idx}/${total}${currentEx.isRetry?' · <span class="retrytag">&#128260; tekrar</span>':''}</div></div>`;
   body += `<div class="card">`;
   const pillIcon = currentEx.catKey ? categoryIconSVG(currentEx.catKey,15) : "";
   body += `<span class="pill">${pillIcon}${currentEx.hint||""}</span>`;
@@ -359,13 +360,29 @@ function markResult(correct, note, noRetry){
        tek bir öğe olarak "ustalık" takibi anlamlı değil), bu yüzden
        yalnızca id'si olan alıştırmalarda ustalık kaydı tutuyoruz. */
     if(currentEx.id) recordAnswer(currentEx.id, correct);
-    sessionScore.total++; if(correct) sessionScore.correct++;
-    if(testMode) testResults.push({cat: sessionQueue[sessionIdx].type, correct});
-    /* XP: ilk denemede doğru bilmek daha çok değer taşır. */
-    if(correct){
-      const gain = currentEx._attempts <= 1 ? XP_FIRST_TRY : XP_SECOND_TRY;
-      sessionXp += gain;
-      if(awardXP(gain).goalJustReached) sessionGoalReached = true;
+
+    /* Tur skoru ve XP yalnızca sorunun İLK sorulduğu hâli için işlenir.
+       Tur sonunda geri gelen tekrar soruları (isRetry) skoru şişirmesin ve
+       XP kazandırmasın — yoksa yanlış yapmak ödüllendirilmiş olurdu.
+       Ustalık kaydı (recordAnswer) ise tekrarlarda da işler; asıl öğrenme
+       orada gerçekleşiyor. */
+    if(!currentEx.isRetry){
+      sessionScore.total++; if(correct) sessionScore.correct++;
+      if(testMode) testResults.push({cat: sessionQueue[sessionIdx].type, correct});
+      if(correct){
+        const gain = currentEx._attempts <= 1 ? XP_FIRST_TRY : XP_SECOND_TRY;
+        sessionXp += gain;
+        if(awardXP(gain).goalJustReached) sessionGoalReached = true;
+      }
+    }
+
+    /* Yanlış cevaplanan (veya atlanan) soru turun SONUNA eklenir; tur, o soru
+       bir kez daha sorulmadan bitmez. Sınavda yapılmaz — sınav bir ölçüm
+       aracıdır, öğretme turu değil. Zaten tekrar olan soru yeniden
+       kuyruğa alınmaz (sonsuz döngü olurdu). */
+    if(!correct && !testMode && !currentEx.isRetry){
+      const item = sessionQueue[sessionIdx];
+      if(item) sessionQueue.push(Object.assign({}, item, {_retry:true}));
     }
   }
   if(fb){
