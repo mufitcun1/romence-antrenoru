@@ -61,17 +61,30 @@ async function registerAccount(usernameRaw, displayNameRaw, password){
   return createAccountRecord(key, (displayNameRaw||"").trim() || usernameRaw.trim(), password);
 }
 
-/* Sabit admin girişi: kullanıcı adı hep "admin", şifre hep bu sabit değer —
-   sürüm/kod güncellensin ya da hesap verisi ne durumda olursa olsun admin
-   girişi hep aynı şifreyle çalışır. Hesap kaydı ilk başarılı girişte otomatik
-   oluşturulur/onarılır. */
-const ADMIN_PASSWORD = "3en683it!!.";
+/* Admin girişi: ÖNCEDEN burada kaynak kodunda açık bir sabit şifre
+   (ADMIN_PASSWORD) vardı. Depo public GitHub'a taşınınca bu, herkesin
+   view-source ile admin şifresini görebileceği bir güvenlik açığı hâline
+   geldi — kaldırıldı. Yeni davranış: "admin" hesabı, normal hesaplarla
+   birebir aynı salt+hash mekanizmasıyla korunuyor (bkz. hashPassword).
+   Hesabın henüz gerçek bir şifresi yoksa (ilk kurulum ya da eski sabit-şifre
+   sürümünden kalma salt:null/hash:null kaydı), girilen şifre o an için YENİ
+   admin şifresi olarak kaydedilir; hesabın zaten bir şifresi varsa normal
+   girişteki gibi doğrulanır. Yani admin olarak ilk giren kişi şifreyi
+   belirlemiş olur — bu yüzden yayına/duyuruya açmadan önce bu adımı SEN
+   (uygulamanın sahibi) tamamlamalısın. */
 async function adminLogin(password){
-  if(password !== ADMIN_PASSWORD) return {ok:false, msg:"Şifre yanlış."};
-  if(!ACCOUNTS.accounts['admin']){
-    ACCOUNTS.accounts['admin'] = { displayName:"Admin", salt:null, hash:null, data:{mastery:{}, testHistory:[], sessionsCompleted:0} };
+  if(!password || password.length<3) return {ok:false, msg:"Şifre en az 3 karakter olmalı."};
+  const acc = ACCOUNTS.accounts['admin'];
+  if(!acc || !acc.hash){
+    const salt = randomSaltHex();
+    const hash = await hashPassword(password, salt);
+    const data = (acc && acc.data) ? acc.data : {mastery:{}, testHistory:[], sessionsCompleted:0};
+    ACCOUNTS.accounts['admin'] = { displayName:"Admin", salt, hash, data };
     pendingSave = true;
+    return {ok:true, key:'admin'};
   }
+  const hash = await hashPassword(password, acc.salt);
+  if(hash !== acc.hash) return {ok:false, msg:"Şifre yanlış."};
   return {ok:true, key:'admin'};
 }
 
@@ -174,13 +187,15 @@ function renderAuth(){
   userInp.focus();
 }
 
-/* "Admin girişi": kullanıcı adı hep sabit "admin", şifre hep sabit
-   ADMIN_PASSWORD — kayıt formu veya kurulum ekranı yok, bkz. adminLogin. */
+/* "Admin girişi": kullanıcı adı hep sabit "admin". Şifre henüz belirlenmediyse
+   yazdığın şey admin şifresi olarak kaydedilir (bkz. adminLogin) — kayıt
+   formu veya ayrı bir kurulum ekranı yok, aynı tek alan hem ilk kurulum hem
+   sonraki girişler için kullanılıyor. */
 function renderAdminAuth(){
   showAppChrome(false);
   root().innerHTML = `<div class="card">
     <div class="pill">Admin Girişi</div>
-    <div class="qtext">Sadece şifreni yaz — kullanıcı adı seçmene gerek yok.</div>
+    <div class="qtext">Sadece şifreni yaz — kullanıcı adı seçmene gerek yok. Daha önce admin şifresi belirlemediysen, yazdığın şifre yeni admin şifren olarak kaydedilir.</div>
     <div class="inputrow" style="flex-direction:column;align-items:stretch">
       <input type="password" id="adminPass" autocomplete="current-password" class="authinput" placeholder="Admin şifresi"/>
     </div>

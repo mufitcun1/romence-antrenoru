@@ -163,6 +163,9 @@ button{font:inherit;cursor:pointer}
 h2{font-size:.95rem;margin:22px 0 10px;color:var(--ink-dim);text-transform:uppercase;letter-spacing:.03em;font-weight:700}
 h2:first-child{margin-top:0}
 .testresult{text-align:center;padding:10px 0}
+.footerlinks{text-align:center;margin:22px 0 6px}
+.footerlinks a{color:var(--ink-dim);font-size:.76rem;text-decoration:none}
+.footerlinks a:hover{color:var(--accent)}
 .savepill{position:fixed;bottom:14px;right:14px;background:var(--panel);border:1px solid var(--border);border-radius:999px;padding:6px 14px;font-size:.72rem;color:var(--ink-dim);box-shadow:var(--shadow);opacity:0;transition:opacity .3s;pointer-events:none}
 .savepill.show{opacity:1}
 .empty{text-align:center;color:var(--ink-dim);padding:30px 10px;font-size:.9rem}

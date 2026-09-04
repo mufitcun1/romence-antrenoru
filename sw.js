@@ -11,12 +11,13 @@
    SHELL_CACHE ismindeki sürüm numarasını her önemli yayında bir artırmak,
    eski istemcilerdeki bozuk/parçalı önbelleği tamamen temizler. */
 
-const SHELL_CACHE = "romence-shell-v1";
+const SHELL_CACHE = "romence-shell-v2";
 const AUDIO_CACHE = "romence-audio-v1";
 
 const SHELL_FILES = [
   "./",
   "index.html",
+  "gizlilik-politikasi.html",
   "manifest.json",
   "css/styles.css",
   "js/data.js",
