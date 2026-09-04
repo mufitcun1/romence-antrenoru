@@ -1,6 +1,6 @@
 {
-  "name": "Romence Antrenörü",
-  "short_name": "Romence",
+  "name": "RoTrainer",
+  "short_name": "RoTrainer",
   "description": "Aile için Romence kelime, fiil çekimi, gramer pratiği ve deneme sınavları",
   "id": "/",
   "start_url": "./index.html",
