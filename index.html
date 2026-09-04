@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Romence Antrenörü</title>
+<link rel="icon" href="assets/images/favicon.svg" type="image/svg+xml">
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#2563eb">
+<link rel="apple-touch-icon" href="assets/images/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Romence">
+<link rel="stylesheet" href="css/styles.css">
+</head>
+<body>
+
+<div class="wrap">
+  <h1>🇷🇴 Romence Antrenörü</h1>
+  <p class="sub">Kelime · Fiil Çekimi · Gramer — tekrarla, ustalaş, sınava gir</p>
+
+  <div class="userbar" id="userbar">
+    <span class="who" id="userbarWho"></span>
+    <button type="button" id="logoutBtn">Çıkış Yap</button>
+  </div>
+
+  <div class="palettepicker">
+    <span class="lbl">Tema:</span>
+    <button type="button" class="paletteswatch" data-palette="blue" style="background:#2563eb" title="Mavi" aria-label="Mavi tema"></button>
+    <button type="button" class="paletteswatch" data-palette="green" style="background:#0e7490" title="Yeşil" aria-label="Yeşil tema"></button>
+    <button type="button" class="paletteswatch" data-palette="purple" style="background:#7c3aed" title="Mor" aria-label="Mor tema"></button>
+  </div>
+
+  <div class="levelrow" id="levelrow" style="display:none">
+    <button class="levelchip active" data-level="A1">A1</button>
+    <button class="levelchip soon" data-level="A2">A2<span class="soontag">yakında</span></button>
+    <button class="levelchip soon" data-level="B1">B1<span class="soontag">yakında</span></button>
+  </div>
+
+  <div class="tabs" id="tabsRow" style="display:none">
+    <div class="tab" data-tab="practice">Pratik</div>
+    <div class="tab" data-tab="test">Deneme Sınavı</div>
+    <div class="tab" data-tab="dash">İlerleme</div>
+  </div>
+
+  <div id="app-root"></div>
+</div>
+
+<div class="savepill" id="savepill">Kaydedildi ✓</div>
+
+<!-- Bağımlılık sırasına göre yükleniyor: veri -> yardımcılar -> depolama ->
+     hesaplar -> ses -> alıştırma üreticileri -> arayüz (INIT en sonda çalışır) -->
+<script src="js/data.js"></script>
+<script src="js/sentence-gen.js"></script>
+<script src="js/helpers.js"></script>
+<script src="js/state.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/accounts.js"></script>
+<script src="js/audio.js"></script>
+<script src="js/icons.js"></script>
+<script src="js/exercises.js"></script>
+<script src="js/ui.js"></script>
+<script>
+/* Uygulamayı "Ana ekrana ekle" ile yüklenebilir/çevrimdışı çalışır yapan
+   service worker kaydı. Yeni bir sürüm devreye girdiğinde (controllerchange)
+   sayfayı bir kez otomatik yeniliyoruz ki kullanıcı elle yenilemek zorunda
+   kalmasın; "refreshing" bayrağı bunun sonsuz döngüye girmesini engelliyor. */
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("sw.js").catch(() => {});
+  });
+  let refreshing = false;
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshing) return;
+    refreshing = true;
+    window.location.reload();
+  });
+}
+</script>
+</body>
+</html>

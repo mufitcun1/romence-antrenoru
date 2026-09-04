@@ -1,0 +1,19 @@
+{
+  "name": "Romence Antrenörü",
+  "short_name": "Romence",
+  "description": "Aile için Romence kelime, fiil çekimi, gramer pratiği ve deneme sınavları",
+  "id": "/",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#eef2f8",
+  "theme_color": "#2563eb",
+  "lang": "tr",
+  "dir": "ltr",
+  "icons": [
+    { "src": "assets/images/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/images/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "assets/images/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
