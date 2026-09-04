@@ -174,6 +174,41 @@ h2:first-child{margin-top:0}
 .userbar{display:none;align-items:center;justify-content:space-between;background:var(--chip);border-radius:10px;padding:9px 12px;margin:0 0 14px;font-size:.85rem}
 .userbar .who{font-weight:700;color:var(--ink)}
 .userbar button{background:none;border:none;color:var(--accent);font-weight:700;font-size:.82rem;cursor:pointer;padding:4px 6px;font-family:inherit}
+/* --- Oyunlaştırma: üst bar (seri + günlük XP hedefi) ---
+   Giriş yapılmadan gizli; showAppChrome() inline display'i temizleyince
+   buradaki flex devreye giriyor (levelrow/tabsRow ile aynı desen). */
+.gamebar{display:flex;align-items:center;gap:16px;background:var(--panel);border:1px solid var(--border);border-radius:12px;padding:10px 14px;margin:0 0 14px;box-shadow:var(--shadow)}
+.gstreak{display:flex;align-items:baseline;gap:6px;flex:none}
+.gflame{font-size:1.05rem;line-height:1;filter:grayscale(1);opacity:.4;transition:filter .3s ease,opacity .3s ease;display:inline-block}
+.gamebar.active .gflame{filter:none;opacity:1}
+.gval{font-size:1.15rem;font-weight:800;font-variant-numeric:tabular-nums;line-height:1}
+.glbl{font-size:.68rem;color:var(--ink-dim)}
+.gxp{flex:1;min-width:0}
+.gxptop{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:5px}
+.gxp .gval{font-size:.92rem}
+.gamebar.goaldone .gxp .gval{color:var(--good)}
+.bar.good{background:var(--good)}
+@keyframes flamePop{0%{transform:scale(1)}40%{transform:scale(1.4)}100%{transform:scale(1)}}
+.gflame.pop{animation:flamePop .55s cubic-bezier(.16,1,.3,1)}
+
+/* --- Tur sonu ödül kutusu --- */
+.rewardbox{margin-top:16px;padding:14px;background:var(--chip);border-radius:12px;text-align:left}
+.xpgain{font-size:1.5rem;font-weight:800;color:var(--accent);text-align:center;margin-bottom:10px;font-variant-numeric:tabular-nums}
+.goalrow{display:flex;justify-content:space-between;font-size:.8rem;color:var(--ink-dim);margin-bottom:2px}
+.rewardstreak{display:flex;align-items:center;gap:11px;margin-top:12px}
+.rewardstreak .rflame{font-size:1.5rem;line-height:1;display:inline-block}
+.rewardstreak .rflame.dim{filter:grayscale(1);opacity:.4}
+.rewardstreak.big .rflame{font-size:2rem}
+.rewardstreak b{display:block;font-size:.95rem}
+.rewardstreak small{display:block;color:var(--ink-dim);font-size:.78rem;margin-top:1px}
+.rewardstreak .rflame.pop{animation:flamePop .6s cubic-bezier(.16,1,.3,1)}
+
+/* --- "Serin risk altında" kartı --- */
+.riskcard{border-color:var(--bad);background:var(--bad-bg)}
+.riskcard .pill{background:var(--bad);color:#fff}
+.riskcard .qtext{color:var(--bad)}
+.riskcard p{color:var(--ink-dim);font-size:.85rem;line-height:1.5;margin:6px 0 0}
+
 .authinput{width:100%;box-sizing:border-box;padding:12px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--panel);color:var(--ink);font-size:.95rem;font-family:inherit}
 .authinput+.authinput{margin-top:8px}
 .autherr{display:none;color:var(--bad);font-size:.85rem;margin-top:10px}

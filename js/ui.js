@@ -7,6 +7,11 @@ let sessionScore = {correct:0,total:0};
 let testMode = false;
 let testResults = [];
 let practiceFilter = "mixed"; // mixed | voc | ver | gram | lis | cum
+/* Bu turda kazanılan ödüller — tur sonu ekranında gösterilir, her tur başında
+   resetSessionRewards() ile sıfırlanır. */
+let sessionXp = 0;              // bu turda toplanan XP
+let sessionGoalReached = false; // günlük hedef bu turda mı tamamlandı
+let sessionFirstOfDay = false;  // bu tur günün ilk turu mu (bonus için)
 const FILTER_OPTS = [
   {key:"mixed", label:"Karışık"},
   {key:"voc", label:"İsim / Kelime"},
@@ -26,6 +31,29 @@ function ratiosForFilter(filter){
 
 function el(html){ const d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; }
 function root(){ return document.getElementById('app-root'); }
+
+/* Üst bardaki seri + günlük XP göstergesini güncel değerlere göre çizer.
+   #app-root'un dışında durduğu için ekran değişimlerinden etkilenmez; her
+   XP kazanımından sonra (awardXP içinden) ve sekme geçişlerinde çağrılır. */
+function updateGameBar(){
+  const bar = document.getElementById('gamebar');
+  if(!bar || !STATE) return;
+  const st = STATE.streak || {current:0};
+  const goal = dailyGoal(), today = xpToday();
+  const pct = Math.min(100, Math.round(100*today/goal));
+  const n = document.getElementById('gStreakNum'); if(n) n.textContent = st.current || 0;
+  const x = document.getElementById('gXpNum');     if(x) x.textContent = today + "/" + goal;
+  const b = document.getElementById('gXpBar');     if(b){ b.style.width = pct + "%"; b.classList.toggle('good', today>=goal); }
+  bar.classList.toggle('active', (st.current||0) > 0);
+  bar.classList.toggle('goaldone', today >= goal);
+}
+
+function resetSessionRewards(){
+  sessionXp = 0;
+  sessionGoalReached = false;
+  /* "Günün ilk turu" bonusu: tur BAŞLARKEN bugün hiç XP kazanılmamışsa. */
+  sessionFirstOfDay = (xpToday() === 0);
+}
 
 function buildSessionQueue(n, opts){
   opts = opts||{};
@@ -333,6 +361,12 @@ function markResult(correct, note, noRetry){
     if(currentEx.id) recordAnswer(currentEx.id, correct);
     sessionScore.total++; if(correct) sessionScore.correct++;
     if(testMode) testResults.push({cat: sessionQueue[sessionIdx].type, correct});
+    /* XP: ilk denemede doğru bilmek daha çok değer taşır. */
+    if(correct){
+      const gain = currentEx._attempts <= 1 ? XP_FIRST_TRY : XP_SECOND_TRY;
+      sessionXp += gain;
+      if(awardXP(gain).goalJustReached) sessionGoalReached = true;
+    }
   }
   if(fb){
     fb.classList.remove('good','bad');
@@ -388,24 +422,61 @@ function scoreRingSVG(pct){
   </svg>`;
 }
 
+/* Turu bitirme ödülleri. Ekran çizilmeden ÖNCE çağrılır ki ödül kutusu
+   güncel XP/seri değerlerini göstersin. */
+function grantSessionEndXP(wasTest){
+  let bonus = wasTest ? XP_TEST_END : XP_SESSION_END;
+  if(!wasTest && sessionScore.total > 0 && sessionScore.correct === sessionScore.total) bonus += XP_PERFECT;
+  if(sessionFirstOfDay) bonus += XP_FIRST_TODAY;
+  sessionXp += bonus;
+  if(awardXP(bonus).goalJustReached) sessionGoalReached = true;
+}
+
+/* Tur ve sınav sonu ekranlarının ortak ödül kutusu: kazanılan XP, günlük
+   hedefe göre konum ve serinin durumu. */
+function rewardBoxHTML(){
+  const goal = dailyGoal(), today = xpToday();
+  const pct = Math.min(100, Math.round(100*today/goal));
+  const st = STATE.streak || {current:0};
+  const done = today >= goal;
+  let streakRow;
+  if(sessionGoalReached){
+    streakRow = `<div class="rewardstreak big"><span class="rflame pop">&#128293;</span>
+      <div><b>${st.current} günlük seri</b><small>Günlük hedefini tamamladın — serin sürüyor.</small></div></div>`;
+  } else if(done){
+    streakRow = `<div class="rewardstreak"><span class="rflame">&#128293;</span>
+      <div><b>${st.current} günlük seri</b><small>Bugünkü hedefin zaten tamamdı.</small></div></div>`;
+  } else {
+    streakRow = `<div class="rewardstreak"><span class="rflame dim">&#128293;</span>
+      <div><b>${st.current} günlük seri</b><small>Seriyi sürdürmek için ${goal-today} XP daha gerekiyor.</small></div></div>`;
+  }
+  return `<div class="rewardbox">
+    <div class="xpgain">+${sessionXp} XP</div>
+    <div class="goalrow"><span>Günlük hedef</span><span>${today}/${goal} XP</span></div>
+    <div class="barwrap"><div class="bar${done?' good':''}" style="width:${pct}%"></div></div>
+    ${streakRow}
+  </div>`;
+}
+
 function renderSessionDone(){
+  const wasTest = testMode;
   const pct = sessionScore.total? Math.round(100*sessionScore.correct/sessionScore.total):0;
-  if(testMode){
+  STATE.sessionsCompleted = (STATE.sessionsCompleted||0)+1;
+  grantSessionEndXP(wasTest);
+  pendingSave = true;
+  if(wasTest){
     STATE.testHistory.push({date:new Date().toISOString().slice(0,10), score:sessionScore.correct, total:sessionScore.total,
       byCategory: summarizeByCat(testResults)});
-    STATE.sessionsCompleted = (STATE.sessionsCompleted||0)+1;
-    pendingSave = true;
     renderTestResult(pct);
     testMode=false; testResults=[];
     return;
   }
-  STATE.sessionsCompleted = (STATE.sessionsCompleted||0)+1;
-  pendingSave = true;
   root().innerHTML = `<div class="card testresult">
     <div class="mascotwrap">${mascotSVG(pct>=70?"happy":pct>=40?"neutral":"sad",84)}</div>
     <div class="pill">Tur Tamamlandı</div>
     <div class="scoreringwrap">${scoreRingSVG(pct)}</div>
     <p class="fraction">${sessionScore.correct}/${sessionScore.total} doğru</p>
+    ${rewardBoxHTML()}
     <div class="row" style="margin-top:14px;gap:10px">
       <button class="btn secondary" id="homeBtn" style="flex:1">Ana Ekrana Dön</button>
       <button class="btn" id="againBtn" style="flex:1">Yeni Tur Başlat</button>
@@ -435,6 +506,7 @@ function renderTestResult(pct){
     <div class="scoreringwrap">${scoreRingSVG(pct)}</div>
     <p class="fraction">${last.score}/${last.total} doğru</p>
     <p style="color:var(--ink-dim)">${pct>=80?"Harika, A1'e hazırsın! 🎉":pct>=60?"İyi gidiyorsun, biraz daha tekrar et.":"Pratik'e dönüp zayıf konuları tekrarla."}</p>
+    ${rewardBoxHTML()}
   </div>
   <div class="card"><h2 style="margin-top:0">Bölüm Bazlı Sonuç</h2>${rows}</div>
   <button class="btn" id="backBtn" style="width:100%">Pratiğe Dön</button>`;
@@ -444,6 +516,7 @@ function renderTestResult(pct){
 function startPractice(){
   sessionQueue = buildSessionQueue(10, ratiosForFilter(practiceFilter));
   sessionIdx = 0; sessionScore = {correct:0,total:0}; testMode=false;
+  resetSessionRewards();
   nextExercise();
 }
 function renderPracticeHome(){
@@ -453,14 +526,21 @@ function renderPracticeHome(){
   const filterLabel = {mixed:"kelime, fiil çekimi, gramer, dinleme ve cümle kurma karışık", voc:"sadece isim/kelime bilgisi",
     ver:"sadece fiil çekimi", gram:"sadece cümle kurulumu/gramer", lis:"sadece dinleme (kulakla anlama)",
     cum:"sadece cümle kurma (sabit ders cümleleri + sınırsız yeni kombinasyon)"}[practiceFilter];
-  root().innerHTML = `<div class="card">
+  /* Akşam olmuş, seri var ve bugünkü hedef henüz tamamlanmamışsa uyar.
+     Koşulun tamamı streakAtRisk() içinde — burada yalnızca çiziyoruz. */
+  const riskCard = streakAtRisk() ? `<div class="card riskcard">
+    <div class="pill">&#9888;&#65039; Seri risk altında</div>
+    <div class="qtext">${STATE.streak.current} günlük serin bugün bitiyor</div>
+    <p>Bugün ${xpRemainingToday()} XP daha kazanırsan serin devam eder — bir tur yeter.</p>
+  </div>` : "";
+  root().innerHTML = riskCard + `<div class="card">
     <div class="pill">A1 Pratik</div>
     <p style="color:var(--ink-dim);font-size:.9rem;line-height:1.5">Ne çalışmak istersin?</p>
     <div class="filterrow" id="filterRow">
       ${FILTER_OPTS.map(f=>`<button type="button" class="filterchip${f.key===practiceFilter?' active':''}" data-key="${f.key}">${f.label}</button>`).join("")}
     </div>
     <p style="color:var(--ink-dim);font-size:.82rem;line-height:1.5">Bu turda ${filterLabel} soruluyor. Bildiklerin gittikçe azalır, bilmediklerin daha sık sorulur.</p>
-    <div class="progresslabel" style="text-align:left;margin:14px 0">Karşılaşılan: ${seen}/${totalItems} · Ustalaşılan: ${mastered}/${totalItems}</div>
+    <div class="progresslabel" style="text-align:left;margin:14px 0">Karşılaşılan: ${seen}/${totalItems} · Ustalaşılan: ${mastered}/${totalItems}<br>Bugün: ${xpToday()}/${dailyGoal()} XP${goalReachedToday()? " &#10003; günlük hedef tamam" : ""}</div>
     <button class="btn" id="startBtn" style="width:100%">Pratiğe Başla (10 Soru)</button>
   </div>`;
   document.querySelectorAll('#filterRow .filterchip').forEach(btn=>{
@@ -473,6 +553,7 @@ function startTest(){
   testMode = true; testResults=[];
   sessionQueue = buildSessionQueue(24, {vocRatio:0.3, verRatio:0.2, lisRatio:0.15, cumRatio:0.15});
   sessionIdx = 0; sessionScore = {correct:0,total:0};
+  resetSessionRewards();
   nextExercise();
 }
 function renderTestHome(){
@@ -507,6 +588,7 @@ function renderDashboard(){
     return {mastered,total,seen,pct: total? Math.round(100*scoreSum/(total*MAX_BOX)):0};
   }
   const vs = stats(vocIds), fs = stats(verIds), cs = stats(sentIds);
+  const st = STATE.streak || {current:0, longest:0, freezes:0};
   const overallPct = Math.round((vs.pct*0.5+fs.pct*0.3+cs.pct*0.2));
   let themeRows = "";
   Object.keys(THEME_NAMES).forEach(t=>{
@@ -519,6 +601,19 @@ function renderDashboard(){
     <div class="stat"><div class="n">%${overallPct}</div><div class="l">A1 HAZIRLIK</div></div>
     <div class="stat"><div class="n">${vs.seen}/${vs.total}</div><div class="l">KARŞILAŞILAN KELİME</div></div>
     <div class="stat"><div class="n">${fs.seen}/${fs.total}</div><div class="l">KARŞILAŞILAN FİİL</div></div>
+  </div>
+  <div class="card">
+    <h2 style="margin-top:0">Seri ve Günlük Hedef</h2>
+    <div class="row"><span>Güncel seri</span><span>&#128293; ${st.current} gün</span></div>
+    <div class="row" style="margin-top:8px"><span>En uzun seri</span><span>${st.longest} gün</span></div>
+    <div class="row" style="margin-top:8px"><span>Seri dondurma</span><span>&#10052;&#65039; ${st.freezes}/${MAX_FREEZES}</span></div>
+    <div class="row" style="margin-top:8px"><span>Bugünkü XP</span><span>${xpToday()}/${dailyGoal()}</span></div>
+    <div class="row" style="margin-top:8px"><span>Toplam XP</span><span>${STATE.xp.total}</span></div>
+    <p style="color:var(--ink-dim);font-size:.82rem;margin:16px 0 0">Günlük hedefin — her gün bu kadar XP kazanırsan serin sürer:</p>
+    <div class="filterrow" id="goalRow">
+      ${DAILY_GOALS.map(g=>`<button type="button" class="filterchip${g.xp===dailyGoal()?' active':''}" data-goal="${g.xp}">${g.label} · ${g.xp} XP</button>`).join("")}
+    </div>
+    <p style="color:var(--ink-dim);font-size:.78rem;margin:0;line-height:1.5">Bir tur (10 soru) yaklaşık 30-40 XP kazandırır. Bir günü kaçırdığında seri dondurma sessizce devreye girip serini korur; her ${FREEZE_EVERY} günlük seride bir tane kazanırsın.</p>
   </div>
   <div class="card">
     <h2 style="margin-top:0">Genel İlerleme (ustalık)</h2>
@@ -548,6 +643,19 @@ function renderDashboard(){
     <div class="autherr" id="backupErr" style="display:none;margin-top:8px"></div>
     <div id="backupOk" style="display:none;margin-top:8px;color:var(--good);font-size:.85rem"></div>
   </div>` : ""}`;
+  document.querySelectorAll('#goalRow .filterchip').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      STATE.dailyGoal = +btn.getAttribute('data-goal');
+      /* Hedef düşürülünce bugünkü XP onu zaten aşmış olabilir; bu durumda
+         gün "tamamlanmış" sayılır ve seri hemen ilerlemeli. */
+      if(goalReachedToday() && STATE.streak.lastActiveDate !== todayKey()) touchStreak();
+      pendingSave = true;
+      persist();
+      updateGameBar();
+      renderDashboard();
+    });
+  });
+
   if(currentUser==='admin'){
     const backupBtn = document.getElementById('backupBtn');
     const area = document.getElementById('backupArea');
@@ -606,6 +714,7 @@ function switchTab(tab){
     persist();
   }
   activeTab = tab;
+  updateGameBar();
   document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.getAttribute('data-tab')===tab));
   if(tab==="practice") renderPracticeHome();
   else if(tab==="test") renderTestHome();
