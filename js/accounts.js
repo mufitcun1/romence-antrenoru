@@ -14,6 +14,30 @@ let ACCOUNTS = null;    // {version:2, accounts:{ key:{displayName,salt,hash,dat
 let currentUser = null; // giriş yapmış kullanıcının anahtarı (küçük harf)
 let authMode = "login"; // "login" | "register"
 
+/* ---- MİSAFİR MODU ----
+   Uygulamayı açan herkesin önce şifre yazmak zorunda olması, Play Store'dan
+   indiren kullanıcının hiçbir şey görmeden kaybedildiği yerdi. Misafir modunda
+   hesap olmadan pratik yapılabiliyor; ilerleme bu cihazın localStorage'ında
+   AYRI bir anahtarda tutuluyor (ACCOUNTS'a karışmıyor, yedek/geri yükleme
+   akışını kirletmiyor) ve kayıt olunduğunda yeni hesaba tohum olarak aktarılıyor. */
+const GUEST_KEY = "romence_guest_v1";
+let isGuest = false;
+
+function loadGuestState(){
+  try{
+    const raw = localStorage.getItem(GUEST_KEY);
+    if(raw) return migrateState(JSON.parse(raw));
+  }catch(e){}
+  return migrateState({mastery:{}, testHistory:[], sessionsCompleted:0});
+}
+function saveGuestState(){
+  try{ localStorage.setItem(GUEST_KEY, JSON.stringify(STATE)); return true; }catch(e){ return false; }
+}
+function clearGuestState(){
+  isGuest = false;
+  try{ localStorage.removeItem(GUEST_KEY); localStorage.removeItem('romence_mode'); }catch(e){}
+}
+
 async function loadAccounts(){
   const raw = await loadAccountsFromStorage();
   ACCOUNTS = raw || {version:2, accounts:{}};
@@ -43,22 +67,24 @@ async function hashPassword(password, saltHex){
 
 /* Bir hesap kaydını gerçekten oluşturan ortak alt fonksiyon — normal kayıt
    (registerAccount) bunu kullanıyor. */
-async function createAccountRecord(key, displayName, password){
+async function createAccountRecord(key, displayName, password, seedData){
   const salt = randomSaltHex();
   const hash = await hashPassword(password, salt);
-  const data = migrateState({mastery:{}, testHistory:[], sessionsCompleted:0});
+  /* seedData: misafir olarak yapılan ilerleme. Yeni hesap boştan değil,
+     kullanıcının o ana kadar kazandıklarıyla başlar. */
+  const data = migrateState(seedData || {mastery:{}, testHistory:[], sessionsCompleted:0});
   ACCOUNTS.accounts[key] = { displayName, salt, hash, data };
   return {ok:true, key};
 }
 
-async function registerAccount(usernameRaw, displayNameRaw, password){
+async function registerAccount(usernameRaw, displayNameRaw, password, seedData){
   const key = (usernameRaw||"").trim().toLowerCase();
   if(!key) return {ok:false, msg:"Kullanıcı adı boş olamaz."};
   if(key==="admin") return {ok:false, msg:'Bu kullanıcı adı ayrılmış — "Admin girişi" bağlantısını kullan.'};
   if(!/^[a-z0-9_.]{2,20}$/i.test(key)) return {ok:false, msg:"Kullanıcı adı yalnızca harf/rakam/._ içerebilir (2-20 karakter)."};
   if(ACCOUNTS.accounts[key]) return {ok:false, msg:"Bu kullanıcı adı zaten alınmış."};
   if(!password || password.length<3) return {ok:false, msg:"Şifre en az 3 karakter olmalı."};
-  return createAccountRecord(key, (displayNameRaw||"").trim() || usernameRaw.trim(), password);
+  return createAccountRecord(key, (displayNameRaw||"").trim() || usernameRaw.trim(), password, seedData);
 }
 
 /* Admin girişi: ÖNCEDEN burada kaynak kodunda açık bir sabit şifre
@@ -98,6 +124,7 @@ async function loginAccount(usernameRaw, password){
 }
 
 function enterAsUser(key){
+  isGuest = false;
   currentUser = key;
   STATE = ACCOUNTS.accounts[key].data;
   /* Eski sürümden kalan hesaplarda oyunlaştırma alanları (xp/streak/dailyGoal)
@@ -108,11 +135,30 @@ function enterAsUser(key){
   switchTab('practice');
 }
 
+/* startImmediately: karşılama ekranındaki "Hemen Başla" doğrudan soruya
+   götürür — ana ekranı arada göstermek sürtünme ekler. */
+function enterAsGuest(startImmediately){
+  isGuest = true;
+  currentUser = null;
+  STATE = loadGuestState();
+  try{ localStorage.setItem('romence_mode','guest'); localStorage.removeItem('romence_user'); }catch(e){}
+  showAppChrome(true);
+  if(startImmediately) startPractice(5);   // ilk tur kısa: hızlı bir başarı anı
+  else switchTab('practice');
+}
+
 function logoutUser(){
-  currentUser = null; STATE = null;
-  try{ localStorage.removeItem('romence_user'); }catch(e){}
+  currentUser = null; STATE = null; isGuest = false;
+  try{ localStorage.removeItem('romence_user'); localStorage.removeItem('romence_mode'); }catch(e){}
   showAppChrome(false);
   authMode = "login";
+  renderAuth();
+}
+
+/* Misafirken "İlerlemeni Kaydet" düğmesi: STATE'i BIRAKMADAN kayıt ekranına
+   geçiyoruz; kayıt başarılı olursa o STATE yeni hesabın tohumu oluyor. */
+function startGuestSignup(){
+  authMode = "register";
   renderAuth();
 }
 
@@ -127,11 +173,34 @@ function showAppChrome(show){
   if(tb) tb.style.display = show? '' : 'none';
   if(ub){
     ub.style.display = show? 'flex' : 'none';
-    if(show && currentUser && ACCOUNTS.accounts[currentUser]){
-      const who = document.getElementById('userbarWho');
+    const who = document.getElementById('userbarWho');
+    const btn = document.getElementById('logoutBtn');
+    if(show && isGuest){
+      if(who) who.textContent = '👤 Misafir';
+      if(btn) btn.textContent = 'İlerlemeni Kaydet';
+    } else if(show && currentUser && ACCOUNTS.accounts[currentUser]){
       if(who) who.textContent = '👤 ' + ACCOUNTS.accounts[currentUser].displayName;
+      if(btn) btn.textContent = 'Çıkış Yap';
     }
   }
+}
+
+/* Kayıt duvarı yerine karşılama ekranı: birincil eylem "Hemen Başla".
+   Yalnızca bu cihazda hatırlanan bir oturum yokken gösterilir — mevcut aile
+   üyeleri kendi cihazlarında hiç görmez. */
+function renderWelcome(){
+  showAppChrome(false);
+  root().innerHTML = `<div class="card welcome">
+    <div class="mascotwrap">${mascotSVG("happy",92)}</div>
+    <div class="qtext" style="text-align:center;margin-bottom:6px">Romence'ye bugün başla</div>
+    <p class="welcometext">Kayıt olmadan hemen deneyebilirsin. Hesap açmak istersen bu turda kazandıkların yeni hesabına taşınır.</p>
+    <button class="btn" id="guestBtn" style="width:100%">Hemen Başla &#183; 5 soru</button>
+    <div class="authswitch">Zaten hesabın var mı? <a id="toLoginLink">Giriş yap</a></div>
+    <div class="authswitch" style="margin-top:2px"><a id="toRegisterLink">Yeni hesap oluştur</a></div>
+  </div>`;
+  document.getElementById('guestBtn').addEventListener('click', ()=> enterAsGuest(true));
+  document.getElementById('toLoginLink').addEventListener('click', ()=>{ authMode="login"; renderAuth(); });
+  document.getElementById('toRegisterLink').addEventListener('click', ()=>{ authMode="register"; renderAuth(); });
 }
 
 function renderAuth(){
@@ -152,6 +221,7 @@ function renderAuth(){
       ? 'Hesabın yok mu? <a id="authSwitchLink">Hesap oluştur</a>'
       : 'Zaten hesabın var mı? <a id="authSwitchLink">Giriş yap</a>'}</div>
     ${isLogin? `<div class="authswitch" style="margin-top:4px"><a id="adminLink">Admin girişi</a></div>` : ""}
+    <div class="authswitch" style="margin-top:4px"><a id="backToWelcome">&#8592; Geri</a></div>
   </div>`;
   const userInp = document.getElementById('authUser');
   const passInp = document.getElementById('authPass');
@@ -171,12 +241,15 @@ function renderAuth(){
       res = await loginAccount(username, password);
     } else {
       const dispInp = document.getElementById('authDisplay');
-      res = await registerAccount(username, dispInp? dispInp.value : "", password);
+      res = await registerAccount(username, dispInp? dispInp.value : "", password, isGuest ? STATE : null);
     }
     submitBtn.disabled = false;
     submitting = false;
     if(!res.ok){ showErr(res.msg); return; }
-    if(!isLogin) pendingSave = true; // yeni hesap: paylaşılan belgeye kaydedilmeli
+    if(!isLogin){
+      pendingSave = true;       // yeni hesap: paylaşılan belgeye kaydedilmeli
+      if(isGuest) clearGuestState();   // ilerleme hesaba taşındı, misafir kopyası gereksiz
+    }
     enterAsUser(res.key);
   }
   document.getElementById('authSubmitBtn').addEventListener('click', submit);
@@ -187,6 +260,13 @@ function renderAuth(){
   });
   const adminLink = document.getElementById('adminLink');
   if(adminLink) adminLink.addEventListener('click', renderAdminAuth);
+  const backLink = document.getElementById('backToWelcome');
+  if(backLink) backLink.addEventListener('click', ()=>{
+    /* Misafirken kayıt ekranına gelinmişse geri dönmek oyuna geri döndürür,
+       karşılama ekranına değil — ilerleme hâlâ elinde. */
+    if(isGuest){ showAppChrome(true); switchTab('practice'); }
+    else renderWelcome();
+  });
   userInp.focus();
 }
 
@@ -246,8 +326,8 @@ function recordAnswer(id, correct){
      kayıt ana ekrana dönene kadar ertelenirdi. O platformdan çıkıldı; kayıt
      artık localStorage'a yazıyor ve hiçbir şeyi yeniden yüklemiyor. Erteleme
      sürdüğü sürece tur sonu ekranında uygulamayı kapatan kullanıcı turun
-     tamamını kaybediyordu — çağrı ui.js:markResult içinde geri kondu
-     (900 ms'lik debounce persist() içinde). */
+     tamamını (XP ve seri dahil) kaybediyordu — çağrı ui.js:markResult içinde
+     geri kondu (900 ms'lik debounce persist() içinde). */
   pendingSave = true;
 }
 function weightFor(id){
@@ -279,7 +359,19 @@ function persistNow(){
   clearTimeout(saveTimer);
   return doPublish();
 }
+function showSavePill(){
+  const p = document.getElementById('savepill');
+  if(p){ p.classList.add('show'); setTimeout(()=>p.classList.remove('show'),1400); }
+}
 async function doPublish(){
+  /* Misafirin ilerlemesi ACCOUNTS'a değil kendi anahtarına yazılır — yedek
+     alma/geri yükleme aracı yalnızca gerçek hesapları taşısın diye. */
+  if(isGuest){
+    const ok = saveGuestState();
+    pendingSave = false;
+    if(ok) showSavePill();
+    return;
+  }
   /* STATE, o an giriş yapmış kullanıcının veri dilimidir (zaten aynı referans
      olduğu için bu satır çoğunlukla no-op'tur, ama güvenlik ağı olarak
      bırakıyoruz). Kaydedilen belge TÜM kullanıcıların hesaplarını birlikte
@@ -287,10 +379,7 @@ async function doPublish(){
   if(currentUser && ACCOUNTS && ACCOUNTS.accounts[currentUser]) ACCOUNTS.accounts[currentUser].data = STATE;
   const ok = await saveAccountsToStorage(ACCOUNTS);
   pendingSave = false;
-  if(ok){
-    const p=document.getElementById('savepill');
-    if(p){ p.classList.add('show'); setTimeout(()=>p.classList.remove('show'),1400); }
-  }
+  if(ok) showSavePill();
 }
 /* Sonuç ekranından ana ekrana dönerken: varsa bekleyen ilerlemeyi hemen kaydet. */
 function goHome(){

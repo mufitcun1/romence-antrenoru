@@ -494,19 +494,29 @@ function renderSessionDone(){
     testMode=false; testResults=[];
     return;
   }
+  /* Misafire, ilerlemesinin kırılgan olduğunu tam da onu kazandığı anda
+     hatırlatıyoruz — kayıt isteğinin en güçlü olduğu an burası. */
+  const guestCta = isGuest ? `<div class="guestcta">
+    <b>İlerlemen şu an yalnızca bu cihazda</b>
+    <span>Hesap açarsan serin, XP'in ve ustalık kayıtların telefonunu değiştirsen bile durur.</span>
+    <button class="btn" id="guestSaveBtn" style="width:100%;margin-top:10px">Hesap Oluştur ve Kaydet</button>
+  </div>` : "";
   root().innerHTML = `<div class="card testresult">
     <div class="mascotwrap">${mascotSVG(pct>=70?"happy":pct>=40?"neutral":"sad",84)}</div>
     <div class="pill">Tur Tamamlandı</div>
     <div class="scoreringwrap">${scoreRingSVG(pct)}</div>
     <p class="fraction">${sessionScore.correct}/${sessionScore.total} doğru</p>
     ${rewardBoxHTML()}
+    ${guestCta}
     <div class="row" style="margin-top:14px;gap:10px">
       <button class="btn secondary" id="homeBtn" style="flex:1">Ana Ekrana Dön</button>
       <button class="btn" id="againBtn" style="flex:1">Yeni Tur Başlat</button>
     </div>
   </div>`;
   persistNow();   // tur ödülleri ekranda görünür görünmez diske yazılsın
-  document.getElementById('againBtn').addEventListener('click', startPractice);
+  const gsb = document.getElementById('guestSaveBtn');
+  if(gsb) gsb.addEventListener('click', startGuestSignup);
+  document.getElementById('againBtn').addEventListener('click', ()=> startPractice(10));
   document.getElementById('homeBtn').addEventListener('click', goHome);
 }
 
@@ -537,8 +547,11 @@ function renderTestResult(pct){
   document.getElementById('backBtn').addEventListener('click', goHome);
 }
 
-function startPractice(){
-  sessionQueue = buildSessionQueue(10, ratiosForFilter(practiceFilter));
+/* n verilmezse 10 soru. Doğrudan olay dinleyicisi olarak da bağlanabildiği
+   için (o zaman n bir Event nesnesi olur) tip kontrolü şart. */
+function startPractice(n){
+  const count = (typeof n === "number" && n > 0) ? n : 10;
+  sessionQueue = buildSessionQueue(count, ratiosForFilter(practiceFilter));
   sessionIdx = 0; sessionScore = {correct:0,total:0}; testMode=false;
   resetSessionRewards();
   nextExercise();
@@ -796,7 +809,11 @@ initPalette();
 document.querySelectorAll('.paletteswatch').forEach(b=> b.addEventListener('click', ()=> applyPalette(b.getAttribute('data-palette'))));
 document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click', ()=> switchTab(t.getAttribute('data-tab'))));
 document.querySelectorAll('.levelchip').forEach(c=> c.addEventListener('click', ()=> selectLevel(c.getAttribute('data-level'))));
-document.getElementById('logoutBtn').addEventListener('click', logoutUser);
+/* Aynı düğme: gerçek hesapta "Çıkış Yap", misafirde "İlerlemeni Kaydet"
+   (etiketi showAppChrome ayarlıyor). */
+document.getElementById('logoutBtn').addEventListener('click', ()=>{
+  if(isGuest) startGuestSignup(); else logoutUser();
+});
 
 /* Bu cihazda daha önce giriş yapılmışsa (localStorage'da hatırlanan kullanıcı
    adı ve o kullanıcı hâlâ kayıtlıysa) şifre sormadan direkt içeri alıyoruz —
@@ -807,10 +824,13 @@ document.getElementById('logoutBtn').addEventListener('click', logoutUser);
   await loadAccounts();
   let remembered = null;
   try{ remembered = localStorage.getItem('romence_user'); }catch(e){}
+  let mode = null;
+  try{ mode = localStorage.getItem('romence_mode'); }catch(e){}
   if(remembered && ACCOUNTS.accounts[remembered]){
     enterAsUser(remembered);
+  } else if(mode === 'guest'){
+    enterAsGuest(false);          // misafir olarak devam ediyordu
   } else {
-    authMode = "login";
-    renderAuth();
+    renderWelcome();              // kayıt duvarı yerine karşılama ekranı
   }
 })();
