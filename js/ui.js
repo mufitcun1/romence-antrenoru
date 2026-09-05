@@ -660,25 +660,32 @@ function renderSessionDone(){
 }
 
 function summarizeByCat(results){
-  const cats = {voc:{c:0,t:0}, ver:{c:0,t:0}, gram:{c:0,t:0}, lis:{c:0,t:0}, cum:{c:0,t:0}};
-  results.forEach(r=>{ cats[r.cat].t++; if(r.correct) cats[r.cat].c++; });
+  /* Anahtarlar buildSessionQueue'nun ürettiği "type" değerleridir; yeni bir tür
+     eklenirse burada da karşılığı olmalı. Yine de bilinmeyen bir tür gelirse
+     sonuç ekranını komple düşürmemek için sayaç ihtiyaç anında açılıyor. */
+  const cats = {voc:{c:0,t:0}, ver:{c:0,t:0}, gram:{c:0,t:0}, lis:{c:0,t:0}, ifade:{c:0,t:0}, cum:{c:0,t:0}};
+  results.forEach(r=>{
+    if(!cats[r.cat]) cats[r.cat] = {c:0,t:0};
+    cats[r.cat].t++; if(r.correct) cats[r.cat].c++;
+  });
   return cats;
 }
 function renderTestResult(pct){
   const last = STATE.testHistory[STATE.testHistory.length-1];
-  const catLabel = {voc:"Kelime",ver:"Fiil",gram:"Gramer",lis:"Dinleme",cum:"Cümle"};
+  const catLabel = {voc:"Kelime",ver:"Fiil",gram:"Gramer",lis:"Dinleme",ifade:"Kalıp İfade",cum:"Cümle"};
   let rows="";
   Object.keys(last.byCategory).forEach(k=>{
     const c=last.byCategory[k];
-    const p = c.t? Math.round(100*c.c/c.t):0;
-    rows += `<div class="themerow"><span class="themename">${catLabel[k]}</span><span class="themepct">${c.c}/${c.t} (%${p})</span></div>`;
+    if(!c.t) return; // o sınavda hiç sorulmamış kategori için "0/0" satırı basma
+    const p = Math.round(100*c.c/c.t);
+    rows += `<div class="themerow"><span class="themename">${catLabel[k]||k}</span><span class="themepct">${c.c}/${c.t} (%${p})</span></div>`;
   });
   root().innerHTML = `<div class="card testresult">
     <div class="mascotwrap">${mascotSVG(pct>=70?"happy":pct>=40?"neutral":"sad",84)}</div>
     <div class="pill">Deneme Sınavı Sonucu</div>
     <div class="scoreringwrap">${scoreRingSVG(pct)}</div>
     <p class="fraction">${last.score}/${last.total} doğru</p>
-    <p style="color:var(--ink-dim)">${pct>=80?"Harika, A1'e hazırsın! 🎉":pct>=60?"İyi gidiyorsun, biraz daha tekrar et.":"Pratik'e dönüp zayıf konuları tekrarla."}</p>
+    <p style="color:var(--ink-dim)">${pct>=80?`Harika, ${level().ad} seviyesine hazırsın! 🎉`:pct>=60?"İyi gidiyorsun, biraz daha tekrar et.":"Pratik'e dönüp zayıf konuları tekrarla."}</p>
     ${rewardBoxHTML()}
   </div>
   <div class="card"><h2 style="margin-top:0">Bölüm Bazlı Sonuç</h2>${rows}</div>

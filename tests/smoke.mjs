@@ -49,15 +49,18 @@ function sunucuBaslat(){
 /* Ekrandaki soruyu tipine göre cevaplar. Doğru cevabı bilerek vermiyoruz —
    amaç akışın çalıştığını görmek, puan almak değil. */
 async function soruyuCevapla(page){
-  if(await page.locator("#opts .opt").count() > 0){
-    await page.locator("#opts .opt").first().click();
-  } else if(await page.locator("#orderBank .wordchip").count() > 0){
-    const n = await page.locator("#orderBank .wordchip").count();
-    for(let i=0;i<n;i++) await page.locator("#orderBank .wordchip").first().click();
-    await page.locator("#checkOrderBtn").click();
-  } else if(await page.locator("#typeInput").count() > 0){
+  /* Cevaplanmış soruda şıklar disabled kalıyor. ":not([disabled])" olmadan
+     Playwright disabled butonu 30 sn boyunca tıklamayı deniyor ve uygulama
+     donduğunda hata "timeout" gibi görünüp asıl sebebi gizliyor. */
+  if(await page.locator("#opts .opt:not([disabled])").count() > 0){
+    await page.locator("#opts .opt:not([disabled])").first().click({timeout: 5000});
+  } else if(await page.locator("#orderBank .wordchip:not([disabled])").count() > 0){
+    const n = await page.locator("#orderBank .wordchip:not([disabled])").count();
+    for(let i=0;i<n;i++) await page.locator("#orderBank .wordchip:not([disabled])").first().click({timeout: 5000});
+    await page.locator("#checkOrderBtn").click({timeout: 5000});
+  } else if(await page.locator("#typeInput:not([disabled])").count() > 0){
     await page.locator("#typeInput").fill("test");
-    await page.locator("#checkBtn").click();
+    await page.locator("#checkBtn").click({timeout: 5000});
   } else {
     return false;
   }
@@ -78,11 +81,23 @@ async function soruyuCevapla(page){
   return true;
 }
 
-async function turuBitir(page, maxSoru){
+async function turuBitir(page, maxSoru, hatalar){
+  let oncekiIdx = -1;
   for(let i=0;i<maxSoru;i++){
     if(await page.locator("#homeBtn, #backBtn").count() > 0) return true;   // sonuç ekranı
+    /* Uygulama bir istisna atıp ekranı çizemezse aynı soru ekranında sonsuza
+       kadar tıklamayalım: soru sırası ilerlemiyorsa donmuşuz demektir. Bunu
+       30 sn'lik Playwright timeout'una bırakmak hatayı okunmaz hale getiriyor. */
+    const idx = await page.evaluate(()=> (typeof sessionIdx === "number" ? sessionIdx : -1));
+    if(idx === oncekiIdx){
+      const sonHata = (hatalar && hatalar.length) ? hatalar[hatalar.length-1] : "(konsolda hata yok)";
+      console.log(`     (ekran ${idx+1}. soruda dondu — son hata: ${sonHata})`);
+      return false;
+    }
+    oncekiIdx = idx;
     if(!(await soruyuCevapla(page))){
-      console.log(`     (tur ${i+1}. soruda cevaplanamadı — ekran: ${(await page.locator("#app-root").innerText()).slice(0,80).replace(/\n/g," ")})`);
+      const sonHata = (hatalar && hatalar.length) ? hatalar[hatalar.length-1] : "(konsolda hata yok)";
+      console.log(`     (tur ${i+1}. soruda cevaplanamadı — son hata: ${sonHata} — ekran: ${(await page.locator("#app-root").innerText()).slice(0,80).replace(/\n/g," ")})`);
       return false;
     }
   }
@@ -128,7 +143,7 @@ try {
       .map(x=> x.data && (x.data.id || x.data[x.data.length-1]))
       .filter(v=> typeof v === "string" && v.includes("_")));
   kontrol("A1 turundaki id'lerin hiçbiri _a2_ değil", a1Idler.every(id=> !id.includes("_a2_")), `örnek: ${a1Idler.slice(0,3).join(", ")}`);
-  const a1Bitti = await turuBitir(page, 14);
+  const a1Bitti = await turuBitir(page, 14, konsolHatalari);
   kontrol("A1 turu sonuç ekranıyla bitti", a1Bitti);
   await page.locator("#homeBtn").click();
 
@@ -150,7 +165,7 @@ try {
       .map(x=> x.data && (x.data.id || x.data[x.data.length-1]))
       .filter(v=> typeof v === "string" && v.includes("_")));
   kontrol("A2 turundaki id'lerin tamamı _a2_ taşıyor", a2Idler.length > 0 && a2Idler.every(id=> id.includes("_a2_")), `örnek: ${a2Idler.slice(0,3).join(", ")}`);
-  const a2Bitti = await turuBitir(page, 14);
+  const a2Bitti = await turuBitir(page, 14, konsolHatalari);
   kontrol("A2 turu sonuç ekranıyla bitti", a2Bitti);
   await page.locator("#homeBtn").click();
 
@@ -166,6 +181,28 @@ try {
       .map(x=> x.data && (x.data.id || x.data[x.data.length-1]))
       .filter(v=> typeof v === "string" && v.includes("_")));
   kontrol("A2 sınavı A2 havuzundan geliyor", sinavIdler.every(id=> id.includes("_a2_")));
+
+  /* Sınavı SONUNA KADAR oynuyoruz. Sınav sonu ekranı (renderSessionDone ->
+     summarizeByCat -> renderTestResult) yalnızca 24. soru cevaplandıktan sonra
+     çalışıyor; sadece sınavı başlatıp bırakmak o yolu hiç test etmiyor. */
+  const sinavBitti = await turuBitir(page, 30, konsolHatalari);
+  kontrol("A2 sınavı sonuç ekranıyla bitti", sinavBitti);
+  const sonucMetni = sinavBitti ? await page.locator("#app-root").innerText() : "";
+  kontrol("Sınav sonucu ekranı çizildi", sonucMetni.includes("Deneme Sınavı Sonucu"), sonucMetni.split("\n").slice(0,3).join(" / "));
+  kontrol("Bölüm bazlı sonuçta 'undefined' etiket yok", !sonucMetni.includes("undefined"));
+  kontrol("A2 sonucunda Kalıp İfade satırı var", sonucMetni.includes("Kalıp İfade"));
+  kontrol("A2 sonucunda boş 'Dinleme' satırı yok", !sonucMetni.includes("Dinleme"));
+  const gecmis = await page.evaluate(()=> STATE.testHistory.map(h=> ({total:h.total, kat:Object.keys(h.byCategory)})));
+  kontrol("Sınav geçmişine kayıt düştü", gecmis.length === 1 && gecmis[0].total === 24, JSON.stringify(gecmis[0]||null));
+  kontrol("Kategori özetinde 'ifade' anahtarı var", (gecmis[0]?.kat||[]).includes("ifade"));
+  /* Yüksek puan yorumu seviyeye göre değişmeli — testi bilerek yanlış cevapladığı
+     için o dal normal akışta çizilmiyor, doğrudan çağırıp kontrol ediyoruz. */
+  const yuksekPuanMetni = sinavBitti
+    ? (await page.evaluate(()=> renderTestResult(95)), await page.locator("#app-root").innerText())
+    : "";
+  kontrol("Yüksek puan yorumu A2 diyor, A1 demiyor",
+    yuksekPuanMetni.includes("A2 seviyesine hazırsın") && !yuksekPuanMetni.includes("A1"),
+    yuksekPuanMetni.split("\n").find(l=>l.includes("hazırsın")) || "");
 
   /* ---------- 5. A2 ilerleme ekranı ---------- */
   console.log("\n5) A2 ilerleme ekranı");
