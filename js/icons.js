@@ -29,7 +29,12 @@ const CATEGORY_ICON_PATHS = {
   soru:    '<circle cx="12" cy="12" r="8.2"/><path d="M9.7 9.5a2.3 2.3 0 1 1 3.5 2c-.9.6-1.2 1-1.2 2.1" stroke-linecap="round"/><circle cx="12" cy="16.8" r="0.15" fill="currentColor" stroke="currentColor" stroke-width="1.6"/>',
   baglac:  '<rect x="3" y="9" width="8" height="6" rx="3"/><rect x="13" y="9" width="8" height="6" rx="3"/><path d="M9 12h6" stroke-linecap="round"/>',
   zaman:   '<path d="M7 4h10M7 20h10" stroke-linecap="round"/><path d="M7.5 4c0 4 2.2 5.7 4.5 8-2.3 2.3-4.5 4-4.5 8h9c0-4-2.2-5.7-4.5-8 2.3-2.3 4.5-4 4.5-8Z" stroke-linejoin="round"/>',
-  yer:     '<path d="M12 21s6.5-6.2 6.5-11.2a6.5 6.5 0 1 0-13 0C5.5 14.8 12 21 12 21Z" stroke-linejoin="round"/><circle cx="12" cy="9.8" r="2.4"/>'
+  yer:     '<path d="M12 21s6.5-6.2 6.5-11.2a6.5 6.5 0 1 0-13 0C5.5 14.8 12 21 12 21Z" stroke-linejoin="round"/><circle cx="12" cy="9.8" r="2.4"/>',
+  /* A2 ile gelen temalar */
+  boyut:   '<rect x="3.5" y="7" width="17" height="10" rx="1.6"/><path d="M7 7v2.6M10.5 7v4M14 7v2.6M17.5 7v4" stroke-linecap="round"/>',
+  duygu:   '<path d="M12 20.3s-7.6-4.6-7.6-10A4.3 4.3 0 0 1 12 7.4a4.3 4.3 0 0 1 7.6 2.9c0 5.4-7.6 10-7.6 10Z" stroke-linejoin="round"/>',
+  ozelgun: '<rect x="3.5" y="10.5" width="17" height="9.5" rx="1.6"/><path d="M3.5 14.3h17M12 10.5V20" stroke-linecap="round"/><path d="M12 10.5c-2.6 0-3.9-.9-3.9-2.3 0-1.1.9-1.9 2-1.9 1.6 0 1.9 1.6 1.9 4.2Zm0 0c2.6 0 3.9-.9 3.9-2.3 0-1.1-.9-1.9-2-1.9-1.6 0-1.9 1.6-1.9 4.2Z" stroke-linejoin="round"/>',
+  edat:    '<path d="M4 12h11" stroke-linecap="round"/><path d="M11.5 8.2 15.3 12l-3.8 3.8" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 5.5v13" stroke-linecap="round"/>'
 };
 function categoryIconSVG(key, size){
   size = size || 20;
