@@ -12,7 +12,14 @@
   .legal .card{text-align:left}
   .legal .updated{color:var(--ink-dim);font-size:.8rem;margin:0 0 18px}
   .legal a{color:var(--accent)}
+  .legal ul{margin:0 0 10px;padding-left:1.1em}
+  .legal li{margin-bottom:6px}
   .backlink{display:inline-block;margin-bottom:14px;color:var(--accent);font-size:.85rem;text-decoration:none;font-weight:600}
+  .legal table{width:100%;border-collapse:collapse;font-size:.86rem;margin:10px 0}
+  .legal th{text-align:left;color:var(--ink-dim);font-weight:600;font-size:.78rem;text-transform:uppercase;letter-spacing:.03em;padding:6px 8px 6px 0;border-bottom:1px solid var(--border)}
+  .legal td{padding:8px 8px 8px 0;border-bottom:1px solid var(--border);vertical-align:top;line-height:1.5}
+  .legal tr:last-child td{border-bottom:none}
+  .legal .note{background:var(--chip);border-radius:10px;padding:12px 14px;font-size:.86rem;color:var(--ink-dim);line-height:1.55}
 </style>
 </head>
 <body>
@@ -20,46 +27,115 @@
   <a class="backlink" href="index.html">← Uygulamaya dön</a>
   <h1>🇷🇴 Gizlilik Politikası</h1>
   <p class="sub">RoTrainer</p>
-  <p class="updated">Son güncelleme: 4 Eylül 2026</p>
+  <p class="updated">Son güncelleme: 5 Eylül 2026</p>
 
   <div class="card">
-    <h2>1. Bu politikanın kapsamı</h2>
-    <p>Bu sayfa, RoTrainer web uygulamasını (<a href="https://mufitcun1.github.io/romence-antrenoru/">mufitcun1.github.io/romence-antrenoru</a>) ve bunun Google Play Store üzerinden sunulan sürümünü kullandığınızda hangi verilerin nasıl işlendiğini açıklar. Uygulamayı geliştiren ve işleten kişi/hesap: <strong>mufitcun1</strong> (iletişim: <a href="mailto:mufitcun1@gmail.com">mufitcun1@gmail.com</a>).</p>
+    <h2>1. Kapsam ve veri sorumlusu</h2>
+    <p>Bu sayfa, RoTrainer'ı (<a href="https://mufitcun1.github.io/romence-antrenoru/">mufitcun1.github.io/romence-antrenoru</a> ve bunun Google Play Store üzerinden sunulan sürümü) kullandığınızda hangi verilerin nasıl işlendiğini açıklar.</p>
+    <p><strong>Veri sorumlusu:</strong> mufitcun1 — iletişim: <a href="mailto:mufitcun1@gmail.com">mufitcun1@gmail.com</a></p>
+    <p>Uygulama 6698 sayılı Kişisel Verilerin Korunması Kanunu (KVKK) kapsamında değerlendirilir. Avrupa Birliği'nde bulunan kullanıcılar için GDPR hükümleri de geçerli olabilir.</p>
   </div>
 
   <div class="card">
-    <h2>2. Hesap ve ilerleme verisi</h2>
-    <p>Uygulamaya kayıt olduğunuzda kullanıcı adınız, görünen adınız ve şifrenizin <strong>düz metin olarak değil</strong>, geri döndürülemeyecek şekilde rastgele bir değerle (salt) birlikte tek yönlü özetlenmiş (hash) hâli saklanır. Ders ilerlemeniz (hangi kelimeleri/fiilleri ne kadar öğrendiğiniz, sınav geçmişiniz) de bu hesapla birlikte tutulur.</p>
-    <p>Bu veriler <strong>yalnızca kullandığınız cihazın tarayıcısında</strong> (yerel depolama / <code>localStorage</code>) saklanır; şu an için herhangi bir sunucuya gönderilmez veya merkezi bir veritabanında tutulmaz. Bu da şu anlama gelir: aynı hesapla farklı bir cihazdan giriş yaparsanız ilerlemeniz otomatik olarak görünmez (cihaza özeldir); tarayıcı verilerinizi temizlerseniz (önbellek/site verisi silme) hesabınız ve ilerlemeniz o cihazda kaybolur.</p>
+    <h2>2. Hangi verileri işliyoruz</h2>
+    <p><strong>Sizden hiçbir zaman istemediğimiz bilgiler:</strong> gerçek adınız, e-posta adresiniz, telefon numaranız, doğum tarihiniz, konumunuz, rehberiniz, fotoğraflarınız ve ödeme bilgileriniz. Uygulama bunların hiçbirini toplamaz.</p>
+    <table>
+      <thead><tr><th>Veri</th><th>Nerede tutulur</th><th>Neden</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Kullanıcı adı (kendi seçtiğiniz) ve isteğe bağlı görünen ad</td>
+          <td>Cihazınız + bulut</td>
+          <td>Aynı cihazı paylaşan kişilerin ilerlemesini ayırmak ve hesabınızı tanımak</td>
+        </tr>
+        <tr>
+          <td>Şifreniz — <strong>düz metin olarak asla saklanmaz</strong>. Cihazınızda rastgele bir değerle (salt) birlikte tek yönlü özetlenir; bulutta Supabase Auth'un kendi güçlü özetleme yöntemiyle tutulur.</td>
+          <td>Cihazınız + bulut</td>
+          <td>Hesabınıza yalnızca sizin girebilmeniz</td>
+        </tr>
+        <tr>
+          <td>Öğrenme ilerlemeniz: hangi kelime/fiil/cümleyi ne kadar bildiğiniz, deneme sınavı geçmişiniz, XP'niz, günlük seriniz ve günlük hedefiniz</td>
+          <td>Cihazınız + bulut</td>
+          <td>Kaldığınız yerden devam edebilmeniz ve cihaz değiştirdiğinizde ilerlemenizin kaybolmaması</td>
+        </tr>
+        <tr>
+          <td>Tema rengi ve ses/titreşim tercihiniz</td>
+          <td>Yalnızca cihazınız</td>
+          <td>Uygulamanın sizin seçtiğiniz gibi açılması</td>
+        </tr>
+        <tr>
+          <td>Oturum anahtarları (bulut senkronu açıksa)</td>
+          <td>Yalnızca cihazınız</td>
+          <td>Her açılışta yeniden şifre sormamak</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="note"><strong>Kayıt olmadan kullanım:</strong> "Hemen Başla" ile hesap açmadan da çalışabilirsiniz. Bu durumda ilerlemeniz yalnızca o cihazın tarayıcısında tutulur ve buluta hiçbir şey gönderilmez.</p>
   </div>
 
   <div class="card">
-    <h2>3. Reklamlar</h2>
-    <p>Uygulamanın geliştirilmesini sürdürebilmek için Google AdSense/Ad Manager aracılığıyla reklam gösterilmesi planlanmaktadır. Reklamlar gösterildiğinde, Google ve reklam ortakları cihaz tanımlayıcıları ve/veya çerezler kullanarak reklam sunumu ve ölçümü yapabilir. Google'ın kendi veri işleme uygulamaları hakkında bilgi için <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">Google Ortak Siteler Politikası</a>'na bakabilirsiniz.</p>
+    <h2>3. Bulut yedeği ve yurt dışına aktarım</h2>
+    <p>Hesap açtığınızda ilerlemeniz, cihazınızın yanı sıra <strong>Supabase</strong> altyapısında da yedeklenir. Sunucular <strong>Almanya'nın Frankfurt bölgesinde (Amazon Web Services, eu-central-1)</strong> bulunur. Bu, KVKK açısından <strong>yurt dışına veri aktarımı</strong> anlamına gelir.</p>
+    <p>Buluta gönderilen şeyler yalnızca şunlardır: kullanıcı adınızdan türetilmiş bir kimlik (<code>kullanıcıadınız@rotrainer.app</code> biçiminde), şifrenizin özetlenmiş hâli ve öğrenme ilerlemeniz. <strong>Buradaki adres gerçek bir e-posta kutusu değildir</strong> — yalnızca sistemin sizi tanıması için üretilen teknik bir kimliktir; oraya posta gönderilmez ve gönderilemez.</p>
+    <p>Bu aktarım, aşağıdaki "Haklarınız" bölümünde belirtilen başvuru yollarıyla her zaman sorgulanabilir. Bulut yedeğini istemiyorsanız hesap açmadan (misafir olarak) kullanmaya devam edebilirsiniz; bu durumda hiçbir veri yurt dışına aktarılmaz.</p>
+  </div>
+
+  <div class="card">
+    <h2>4. Veri güvenliği</h2>
+    <ul>
+      <li>Cihaz ile sunucu arasındaki tüm trafik <strong>TLS (https)</strong> ile şifrelenir.</li>
+      <li>Veritabanında <strong>satır düzeyi güvenlik (Row Level Security)</strong> etkindir: her kullanıcı yalnızca kendi satırını okuyabilir ve yazabilir. Bir kullanıcının başka birinin ilerlemesini görmesi, değiştirmesi veya kendi kaydını başkasının üzerine yazması veritabanı düzeyinde engellenir.</li>
+      <li>Şifreler hiçbir aşamada düz metin olarak saklanmaz veya kaydedilmez.</li>
+      <li>Uygulamanın kaynak kodunda yalnızca herkese açık olması tasarım gereği olan anahtar bulunur; yönetici düzeyinde erişim sağlayan hiçbir gizli anahtar uygulamaya gömülmez.</li>
+    </ul>
+    <p>Bununla birlikte hiçbir sistem %100 güvenli değildir. Uygulamayı bir bankacılık uygulaması gibi düşünmeyin: lütfen başka hesaplarınızda kullandığınız bir şifreyi buraya koymayın.</p>
+  </div>
+
+  <div class="card">
+    <h2>5. Reklamlar</h2>
+    <p>Uygulamanın geliştirilmesini sürdürebilmek için Google AdSense/Ad Manager aracılığıyla reklam gösterilmesi planlanmaktadır. Reklamlar gösterildiğinde Google ve reklam ortakları, cihaz tanımlayıcıları ve/veya çerezler kullanarak reklam sunumu ve ölçümü yapabilir. Google'ın veri işleme uygulamaları için <a href="https://policies.google.com/technologies/partner-sites" target="_blank" rel="noopener">Google Ortak Siteler Politikası</a>'na bakabilirsiniz.</p>
+    <p>Reklam sistemine <strong>hesap bilgileriniz veya öğrenme ilerlemeniz aktarılmaz</strong>; reklamlar uygulamanın içeriğinden bağımsız çalışır.</p>
     <p>Yaşı belirsiz veya çocuk olabilecek kullanıcılara yönelik reklamlarda, Google Play'in Aileler Politikası'na uygun olarak yalnızca sertifikalı reklam sağlayıcıları ve <strong>kişiselleştirilmemiş (davranışsal olmayan) reklam</strong> modu kullanılır.</p>
   </div>
 
   <div class="card">
-    <h2>4. Çocukların gizliliği</h2>
-    <p>Uygulama bir dil öğrenme aracı olduğu için tüm yaş gruplarına hitap edebilir. Bilerek 13 yaş altı çocuklardan reklam kişiselleştirmesi için kullanılabilecek kişisel veri toplanmaz; hesap oluşturmak isteyen küçük yaştaki kullanıcıların bunu bir veli/vasi gözetiminde yapması önerilir.</p>
+    <h2>6. Çocukların gizliliği</h2>
+    <p>Uygulama bir dil öğrenme aracı olduğu için her yaştan kullanıcıya hitap edebilir. Bilerek 13 yaş altı çocuklardan reklam kişiselleştirmesinde kullanılabilecek kişisel veri toplanmaz. Küçük yaştaki kullanıcıların hesap açarken bir veli/vasi gözetiminde olması önerilir. Bir çocuğa ait veri işlendiğini düşünüyorsanız aşağıdaki adresten bize ulaşın; ilgili kayıtları sileriz.</p>
   </div>
 
   <div class="card">
-    <h2>5. Verilerinizin silinmesi</h2>
-    <p>Hesabınızı ve ilerleme verinizi silmek için tarayıcınızın site verilerini/yerel depolamasını temizlemeniz yeterlidir (bu işlem geri alınamaz). Uygulama içinden toplu bir hesap yönetimi talebiniz olursa yukarıdaki e-posta adresinden bize ulaşabilirsiniz.</p>
+    <h2>7. Saklama süresi ve silme</h2>
+    <p><strong>Cihazınızdaki veriler:</strong> tarayıcınızın site verilerini/yerel depolamasını temizlediğinizde silinir. Bu işlem geri alınamaz; bulut yedeğiniz varsa aynı hesapla tekrar giriş yaparak ilerlemenizi geri getirebilirsiniz.</p>
+    <p><strong>Buluttaki veriler:</strong> hesabınız siz silinmesini isteyene kadar saklanır. Ayrıca <strong>üst üste 24 ay hiç giriş yapılmayan hesaplar</strong> ve ilerleme kayıtları düzenli olarak silinir.</p>
+    <p><strong>Hesabınızı sildirmek için:</strong> <a href="mailto:mufitcun1@gmail.com?subject=Hesap%20silme%20talebi">mufitcun1@gmail.com</a> adresine kullanıcı adınızı yazarak bir e-posta gönderin. Talebiniz en geç <strong>30 gün</strong> içinde yerine getirilir; hesabınız ve ona bağlı tüm ilerleme verisi kalıcı olarak silinir, yedeklerden de çıkarılır.</p>
   </div>
 
   <div class="card">
-    <h2>6. Bu politikadaki değişiklikler</h2>
-    <p>Uygulama geliştikçe (örneğin gerçek sunucu tabanlı senkronizasyon veya üyelik sistemi eklendiğinde) bu politika güncellenecektir. Güncel sürüm her zaman bu sayfada yayında olacaktır.</p>
+    <h2>8. Haklarınız (KVKK md. 11)</h2>
+    <p>Kişisel verileriniz konusunda şu haklara sahipsiniz:</p>
+    <ul>
+      <li>Kişisel verinizin işlenip işlenmediğini öğrenme ve işlenmişse buna ilişkin bilgi talep etme</li>
+      <li>İşlenme amacını ve amacına uygun kullanılıp kullanılmadığını öğrenme</li>
+      <li>Yurt içinde veya yurt dışında verilerinizin aktarıldığı üçüncü kişileri bilme</li>
+      <li>Eksik veya yanlış işlenmişse düzeltilmesini isteme</li>
+      <li>Kanundaki şartlar çerçevesinde silinmesini veya yok edilmesini isteme</li>
+      <li>Düzeltme/silme işlemlerinin verilerin aktarıldığı üçüncü kişilere bildirilmesini isteme</li>
+      <li>Münhasıran otomatik sistemlerle analiz edilmesi suretiyle aleyhinize bir sonuç ortaya çıkmasına itiraz etme</li>
+      <li>Kanuna aykırı işlenme sebebiyle zarara uğramanız hâlinde zararın giderilmesini talep etme</li>
+    </ul>
+    <p>Bu talepleriniz için <a href="mailto:mufitcun1@gmail.com">mufitcun1@gmail.com</a> adresine yazabilirsiniz. Başvurunuz en geç <strong>30 gün</strong> içinde sonuçlandırılır.</p>
   </div>
 
   <div class="card">
-    <h2>7. İletişim</h2>
-    <p>Sorularınız için: <a href="mailto:mufitcun1@gmail.com">mufitcun1@gmail.com</a></p>
+    <h2>9. Bu politikadaki değişiklikler</h2>
+    <p>Uygulama geliştikçe (örneğin üyelik sistemi, bildirimler veya yeni özellikler eklendiğinde) bu politika güncellenir. Güncel sürüm her zaman bu sayfada yayımlanır ve sayfanın başındaki tarih değiştirilir. Önemli bir değişiklik olduğunda uygulama içinde de bilgilendirme yapılır.</p>
   </div>
 
-  <p class="updated" style="margin-top:18px">Not: Bu metin genel bir şablon niteliğindedir, hukuki danışmanlık yerine geçmez. Uygulama geniş kitleye/ticari olarak yayınlanmadan önce bir hukuk uzmanına gözden geçirtilmesi önerilir.</p>
+  <div class="card">
+    <h2>10. İletişim</h2>
+    <p>Her türlü soru, talep ve şikâyetiniz için: <a href="mailto:mufitcun1@gmail.com">mufitcun1@gmail.com</a></p>
+  </div>
+
+  <p class="updated" style="margin-top:18px">Not: Bu metin bilgilendirme amaçlıdır ve hukuki danışmanlık yerine geçmez. Uygulama ticari olarak yayınlanmadan önce bir hukuk uzmanına gözden geçirtilmesi önerilir.</p>
 </div>
 </body>
 </html>
