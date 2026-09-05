@@ -1,0 +1,12 @@
+{
+  "name": "romence-antrenoru",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Türkçe arayüzlü Romence öğrenme uygulaması (PWA). Uygulamanın kendisi derleme gerektirmez — bu package.json yalnızca duman testini çalıştırmak içindir.",
+  "scripts": {
+    "test": "node tests/smoke.mjs"
+  },
+  "devDependencies": {
+    "playwright": "^1.49.0"
+  }
+}

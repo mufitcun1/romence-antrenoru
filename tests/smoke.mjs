@@ -1,0 +1,210 @@
+/* =============================================================================
+   DUMAN TESTİ (smoke test) — Romence Antrenörü
+   =============================================================================
+   Çalıştırma:
+       node tests/smoke.mjs
+   (Depo kökünden. Playwright ve Chromium kurulu olmalı; test kendi statik
+   sunucusunu ayağa kaldırır, ayrıca bir şey başlatmana gerek yok.)
+
+   Amaç: her yayından önce elle tıklamadan şu soruların cevabını almak —
+   uygulama açılıyor mu, hesap oluşturulabiliyor mu, A1 turu çalışıyor mu,
+   A2 turu çalışıyor mu, A1 ile A2 ilerlemesi birbirine karışıyor mu,
+   konsolda hata var mı.
+
+   Çıkış kodu 0 = hepsi geçti, 1 = en az bir kontrol düştü.
+   ============================================================================= */
+import { chromium } from "playwright";
+import http from "node:http";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const KOK = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const PORT = 8099;
+const MIME = { ".html":"text/html", ".js":"text/javascript", ".css":"text/css",
+  ".json":"application/json", ".svg":"image/svg+xml", ".png":"image/png", ".mp3":"audio/mpeg" };
+
+const sonuclar = [];
+function kontrol(ad, kosul, ayrinti){
+  sonuclar.push({ad, gecti: !!kosul, ayrinti: ayrinti||""});
+  console.log(`${kosul ? "  ✓" : "  ✗"} ${ad}${ayrinti ? "  — " + ayrinti : ""}`);
+}
+
+function sunucuBaslat(){
+  return new Promise(res=>{
+    const s = http.createServer((req, resp)=>{
+      let p = decodeURIComponent(new URL(req.url, "http://x").pathname);
+      if(p === "/") p = "/index.html";
+      const dosya = path.join(KOK, p);
+      if(!dosya.startsWith(KOK) || !fs.existsSync(dosya) || fs.statSync(dosya).isDirectory()){
+        resp.writeHead(404); resp.end("yok"); return;
+      }
+      resp.writeHead(200, {"Content-Type": MIME[path.extname(dosya)] || "application/octet-stream"});
+      fs.createReadStream(dosya).pipe(resp);
+    });
+    s.listen(PORT, ()=> res(s));
+  });
+}
+
+/* Ekrandaki soruyu tipine göre cevaplar. Doğru cevabı bilerek vermiyoruz —
+   amaç akışın çalıştığını görmek, puan almak değil. */
+async function soruyuCevapla(page){
+  if(await page.locator("#opts .opt").count() > 0){
+    await page.locator("#opts .opt").first().click();
+  } else if(await page.locator("#orderBank .wordchip").count() > 0){
+    const n = await page.locator("#orderBank .wordchip").count();
+    for(let i=0;i<n;i++) await page.locator("#orderBank .wordchip").first().click();
+    await page.locator("#checkOrderBtn").click();
+  } else if(await page.locator("#typeInput").count() > 0){
+    await page.locator("#typeInput").fill("test");
+    await page.locator("#checkBtn").click();
+  } else {
+    return false;
+  }
+  /* Test bilerek doğru cevap vermiyor; yanlış cevapta uygulama tekrar hakkı
+     verip "Devam"ı göstermeyebiliyor. O durumda "Atla" ile soruyu kapatıyoruz. */
+  const devam = page.locator("#nextBtn");
+  try{
+    await devam.waitFor({state:"visible", timeout: 1500});
+  }catch(e){
+    const atla = page.locator("#skipBtn");
+    if(await atla.count() > 0 && await atla.isVisible()) await atla.click();
+    await devam.waitFor({state:"visible", timeout: 5000});
+  }
+  /* nextBtn'de yanlışlıkla atlamayı engelleyen 350 ms'lik bir koruma penceresi
+     var (bkz. ui.js) — tıklamadan önce onun geçmesini bekliyoruz. */
+  await page.waitForTimeout(420);
+  await devam.click({timeout: 5000});
+  return true;
+}
+
+async function turuBitir(page, maxSoru){
+  for(let i=0;i<maxSoru;i++){
+    if(await page.locator("#homeBtn, #backBtn").count() > 0) return true;   // sonuç ekranı
+    if(!(await soruyuCevapla(page))){
+      console.log(`     (tur ${i+1}. soruda cevaplanamadı — ekran: ${(await page.locator("#app-root").innerText()).slice(0,80).replace(/\n/g," ")})`);
+      return false;
+    }
+  }
+  return await page.locator("#homeBtn, #backBtn").count() > 0;
+}
+
+const sunucu = await sunucuBaslat();
+const browser = await chromium.launch();
+const page = await browser.newPage();
+
+const konsolHatalari = [];
+page.on("console", m => { if(m.type()==="error") konsolHatalari.push(m.text()); });
+page.on("pageerror", e => konsolHatalari.push("pageerror: " + e.message));
+
+try {
+  await page.goto(`http://localhost:${PORT}/index.html`);
+  await page.waitForSelector("#app-root .card", {timeout: 10000});
+
+  /* ---------- 1. Hesap oluşturma ---------- */
+  console.log("\n1) Giriş / hesap");
+  await page.locator("#authSwitchLink").click();          // giriş -> hesap oluştur
+  /* #authUser her iki ekranda da var; yeniden çizim bitmeden doldurursak
+     değer siliniyor. Yalnızca kayıt ekranında bulunan alanı bekliyoruz. */
+  await page.waitForSelector("#authDisplay", {timeout: 5000});
+  await page.locator("#authUser").fill("testkullanici");
+  await page.locator("#authPass").fill("test1234");
+  await page.locator("#authSubmitBtn").click();
+  await page.waitForSelector("#levelrow", {state:"visible", timeout: 10000});
+  kontrol("Hesap oluşturulup uygulamaya girildi", await page.locator("#levelrow").isVisible());
+
+  /* ---------- 2. A1 hâlâ çalışıyor (regresyon) ---------- */
+  console.log("\n2) A1 regresyon");
+  kontrol("A1 chip'i aktif", await page.locator('.levelchip[data-level="A1"].active').count() === 1);
+  const a1Filtreler = await page.locator("#filterRow .filterchip").allTextContents();
+  kontrol("A1 filtreleri arasında Dinleme var", a1Filtreler.some(t=>t.includes("Dinleme")), a1Filtreler.join(" | "));
+  kontrol("A1 filtreleri arasında Kalıp İfade YOK", !a1Filtreler.some(t=>t.includes("Kalıp")));
+  await page.locator("#startBtn").click();
+  await page.waitForSelector(".qtext");
+  const a1Kuyruk = await page.evaluate(()=> sessionQueue.map(x=>x.type));
+  kontrol("A1 turu 10 soru üretti", a1Kuyruk.length === 10, `tipler: ${[...new Set(a1Kuyruk)].join(",")}`);
+  const a1Idler = await page.evaluate(()=> sessionQueue
+      .filter(x=> x.type !== "gram")            // gram maddesinde data bir konu adı, id yok
+      .map(x=> x.data && (x.data.id || x.data[x.data.length-1]))
+      .filter(v=> typeof v === "string" && v.includes("_")));
+  kontrol("A1 turundaki id'lerin hiçbiri _a2_ değil", a1Idler.every(id=> !id.includes("_a2_")), `örnek: ${a1Idler.slice(0,3).join(", ")}`);
+  const a1Bitti = await turuBitir(page, 14);
+  kontrol("A1 turu sonuç ekranıyla bitti", a1Bitti);
+  await page.locator("#homeBtn").click();
+
+  /* ---------- 3. A2 seviyesi ---------- */
+  console.log("\n3) A2 seviyesi");
+  await page.locator('.levelchip[data-level="A2"]').click();
+  await page.waitForSelector("#startBtn", {timeout: 5000});
+  kontrol("A2 seçilince sekmeler görünür (yakında ekranı değil)", await page.locator("#tabsRow").isVisible());
+  const a2Filtreler = await page.locator("#filterRow .filterchip").allTextContents();
+  kontrol("A2 filtrelerinde Kalıp İfade var", a2Filtreler.some(t=>t.includes("Kalıp")), a2Filtreler.join(" | "));
+  kontrol("A2 filtrelerinde Dinleme YOK", !a2Filtreler.some(t=>t.includes("Dinleme")));
+
+  await page.locator("#startBtn").click();
+  await page.waitForSelector(".qtext");
+  const a2Kuyruk = await page.evaluate(()=> sessionQueue.map(x=>x.type));
+  kontrol("A2 turu 10 soru üretti", a2Kuyruk.length === 10, `tipler: ${[...new Set(a2Kuyruk)].join(",")}`);
+  const a2Idler = await page.evaluate(()=> sessionQueue
+      .filter(x=> x.type !== "gram")            // gram maddesinde data bir konu adı, id yok
+      .map(x=> x.data && (x.data.id || x.data[x.data.length-1]))
+      .filter(v=> typeof v === "string" && v.includes("_")));
+  kontrol("A2 turundaki id'lerin tamamı _a2_ taşıyor", a2Idler.length > 0 && a2Idler.every(id=> id.includes("_a2_")), `örnek: ${a2Idler.slice(0,3).join(", ")}`);
+  const a2Bitti = await turuBitir(page, 14);
+  kontrol("A2 turu sonuç ekranıyla bitti", a2Bitti);
+  await page.locator("#homeBtn").click();
+
+  /* ---------- 4. A2 deneme sınavı ---------- */
+  console.log("\n4) A2 deneme sınavı");
+  await page.locator('.tab[data-tab="test"]').click();
+  await page.locator("#startTestBtn").click();
+  await page.waitForSelector(".qtext");
+  const sinavN = await page.evaluate(()=> sessionQueue.length);
+  kontrol("A2 sınavı 24 soru üretti", sinavN === 24, `soru: ${sinavN}`);
+  const sinavIdler = await page.evaluate(()=> sessionQueue
+      .filter(x=> x.type !== "gram")            // gram maddesinde data bir konu adı, id yok
+      .map(x=> x.data && (x.data.id || x.data[x.data.length-1]))
+      .filter(v=> typeof v === "string" && v.includes("_")));
+  kontrol("A2 sınavı A2 havuzundan geliyor", sinavIdler.every(id=> id.includes("_a2_")));
+
+  /* ---------- 5. A2 ilerleme ekranı ---------- */
+  console.log("\n5) A2 ilerleme ekranı");
+  await page.locator('.tab[data-tab="dash"]').click();
+  await page.waitForSelector(".statgrid");
+  const dashMetni = await page.locator("#app-root").innerText();
+  kontrol("İlerleme ekranı A2 etiketiyle açıldı", dashMetni.includes("A2"), dashMetni.split("\n")[1] || "");
+  kontrol("İlerleme ekranında A2 kelime sayısı (516) görünüyor", dashMetni.includes("516"));
+
+  /* ---------- 6. B1 hâlâ yakında ---------- */
+  console.log("\n6) B1");
+  await page.locator('.levelchip[data-level="B1"]').click();
+  kontrol("B1 hâlâ 'yakında' ekranı gösteriyor", (await page.locator("#app-root").innerText()).includes("hazırlanıyor"));
+
+  /* ---------- 7. A1 ilerlemesi bozulmadı ---------- */
+  console.log("\n7) Veri ayrımı");
+  const kutular = await page.evaluate(()=> Object.keys(STATE.mastery));
+  const a1Kayit = kutular.filter(k=> !k.includes("_a2_"));
+  const a2Kayit = kutular.filter(k=> k.includes("_a2_"));
+  kontrol("A1 ilerleme kayıtları duruyor", a1Kayit.length > 0, `${a1Kayit.length} kayıt`);
+  kontrol("A2 ilerlemesi ayrı anahtarlarla tutuluyor", a2Kayit.length > 0, `${a2Kayit.length} kayıt`);
+  kontrol("A1 ve A2 anahtarları çakışmıyor", a1Kayit.every(k=> !a2Kayit.includes(k)));
+
+  /* ---------- 8. Konsol ---------- */
+  console.log("\n8) Konsol");
+  kontrol("Konsolda hata yok", konsolHatalari.length === 0, konsolHatalari.slice(0,3).join(" | "));
+
+} catch(err){
+  kontrol("Test beklenmedik hatayla durdu", false, err.message);
+} finally {
+  await browser.close();
+  sunucu.close();
+}
+
+const dusen = sonuclar.filter(s=> !s.gecti);
+console.log(`\n${"=".repeat(60)}`);
+console.log(`SONUÇ: ${sonuclar.length - dusen.length}/${sonuclar.length} kontrol geçti`);
+if(dusen.length){
+  console.log("DÜŞENLER:");
+  dusen.forEach(d=> console.log(`  ✗ ${d.ad}${d.ayrinti ? "  — " + d.ayrinti : ""}`));
+}
+process.exit(dusen.length ? 1 : 0);
