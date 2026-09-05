@@ -81,6 +81,10 @@ async function soruyuCevapla(page){
   return true;
 }
 
+/* maxSoru bir ÜST SINIR, turun uzunluğu değil: yanlış cevaplanan soru turun
+   sonunda bir kez daha soruluyor (bkz. ui.js:markResult), bu test de bilerek
+   yanlış cevap verdiği için 10 soruluk bir tur 20 soruya kadar uzayabiliyor.
+   Sınav turunda tekrar yok, orada uzunluk sabit. */
 async function turuBitir(page, maxSoru, hatalar){
   let oncekiIdx = -1;
   for(let i=0;i<maxSoru;i++){
@@ -106,7 +110,12 @@ async function turuBitir(page, maxSoru, hatalar){
 
 const sunucu = await sunucuBaslat();
 const browser = await chromium.launch();
-const page = await browser.newPage();
+/* Service worker'ı engelliyoruz: sw.js yeni bir sürümü devralınca sayfayı
+   kendisi yeniliyor (controllerchange -> location.reload, bkz. index.html) ve
+   testin ortasında etkileşimi kesebiliyor. Burada test edilen şey SW değil;
+   kaynağı kapatmak kararsız bir testi tolere etmekten iyidir. */
+const context = await browser.newContext({serviceWorkers: "block"});
+const page = await context.newPage();
 
 /* Uygulamanın kendi hataları ile dış kaynak hatalarını ayırıyoruz: AdSense
    script'i (pagead2.googlesyndication.com) bu kapalı test ortamından yüklenemez
@@ -128,7 +137,15 @@ try {
 
   /* ---------- 1. Hesap oluşturma ---------- */
   console.log("\n1) Giriş / hesap");
-  await page.locator("#authSwitchLink").click();          // giriş -> hesap oluştur
+  /* Misafir modu geldikten sonra ilk ekran kayıt formu değil, karşılama
+     ekranı: oradan kayıt formuna #toRegisterLink ile geçiliyor. Eski kayıt
+     ekranından gelen yol (#authSwitchLink) hâlâ geçerli, ikisini de
+     destekliyoruz ki test her iki akışta da anlamlı kalsın. */
+  if(await page.locator("#toRegisterLink").count()){
+    await page.locator("#toRegisterLink").click();        // karşılama -> hesap oluştur
+  } else {
+    await page.locator("#authSwitchLink").click();        // giriş -> hesap oluştur
+  }
   /* #authUser her iki ekranda da var; yeniden çizim bitmeden doldurursak
      değer siliniyor. Yalnızca kayıt ekranında bulunan alanı bekliyoruz. */
   await page.waitForSelector("#authDisplay", {timeout: 5000});
@@ -153,7 +170,7 @@ try {
       .map(x=> x.data && (x.data.id || x.data[x.data.length-1]))
       .filter(v=> typeof v === "string" && v.includes("_")));
   kontrol("A1 turundaki id'lerin hiçbiri _a2_ değil", a1Idler.every(id=> !id.includes("_a2_")), `örnek: ${a1Idler.slice(0,3).join(", ")}`);
-  const a1Bitti = await turuBitir(page, 14, konsolHatalari);
+  const a1Bitti = await turuBitir(page, 26, konsolHatalari);
   kontrol("A1 turu sonuç ekranıyla bitti", a1Bitti);
   await page.locator("#homeBtn").click();
 
@@ -175,7 +192,7 @@ try {
       .map(x=> x.data && (x.data.id || x.data[x.data.length-1]))
       .filter(v=> typeof v === "string" && v.includes("_")));
   kontrol("A2 turundaki id'lerin tamamı _a2_ taşıyor", a2Idler.length > 0 && a2Idler.every(id=> id.includes("_a2_")), `örnek: ${a2Idler.slice(0,3).join(", ")}`);
-  const a2Bitti = await turuBitir(page, 14, konsolHatalari);
+  const a2Bitti = await turuBitir(page, 26, konsolHatalari);
   kontrol("A2 turu sonuç ekranıyla bitti", a2Bitti);
   await page.locator("#homeBtn").click();
 
