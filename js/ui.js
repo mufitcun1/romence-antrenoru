@@ -12,6 +12,7 @@ let practiceFilter = "mixed"; // mixed | voc | ver | gram | lis | cum
 let sessionXp = 0;              // bu turda toplanan XP
 let sessionGoalReached = false; // günlük hedef bu turda mı tamamlandı
 let sessionFirstOfDay = false;  // bu tur günün ilk turu mu (bonus için)
+let sessionCombo = 0;           // ardışık doğru sayısı (yanlışta sıfırlanır)
 const FILTER_OPTS = [
   {key:"mixed", label:"Karışık"},
   {key:"voc", label:"İsim / Kelime"},
@@ -51,6 +52,7 @@ function updateGameBar(){
 function resetSessionRewards(){
   sessionXp = 0;
   sessionGoalReached = false;
+  sessionCombo = 0;
   /* "Günün ilk turu" bonusu: tur BAŞLARKEN bugün hiç XP kazanılmamışsa. */
   sessionFirstOfDay = (xpToday() === 0);
 }
@@ -352,6 +354,7 @@ function markResult(correct, note, noRetry){
       fb.classList.add('show','bad');
       fb.innerHTML = `<div class="ficon">✕</div><div class="ftext"><b>Yanlış!</b> Tekrar dene 💪</div>`;
     }
+    sfxWrong();
     return false;
   }
   if(!currentEx._done){
@@ -373,6 +376,15 @@ function markResult(correct, note, noRetry){
         const gain = currentEx._attempts <= 1 ? XP_FIRST_TRY : XP_SECOND_TRY;
         sessionXp += gain;
         if(awardXP(gain).goalJustReached) sessionGoalReached = true;
+        sessionCombo++;
+        /* Her 5'li combo küçük bir ek ödül verir — ardışık doğruyu sürdürmek
+           tek tek doğrudan daha değerli olsun diye. */
+        if(sessionCombo % COMBO_STEP === 0){
+          sessionXp += XP_COMBO;
+          if(awardXP(XP_COMBO).goalJustReached) sessionGoalReached = true;
+        }
+      } else {
+        sessionCombo = 0;
       }
     }
 
@@ -399,9 +411,18 @@ function markResult(correct, note, noRetry){
     const spellingLine = currentEx.roDisplay
       ? `<div style="margin-top:4px;color:var(--ink-dim);font-size:.85rem">Yazılışı: <b style="color:var(--ink)">${currentEx.roDisplay}</b></div>`
       : "";
+    /* Combo rozeti yalnızca 3'ten sonra çıkar — her doğruda görünen bir rozet
+       kısa sürede görünmez olur. */
+    const comboChip = (correct && sessionCombo >= COMBO_SHOW)
+      ? ` <span class="combochip${sessionCombo % COMBO_STEP === 0 ? ' hit' : ''}">&#128293; ${sessionCombo}</span>` : "";
     fb.innerHTML = correct
-      ? `<div class="ficon">✓</div><div class="ftext"><b>Doğru!</b>${spellingLine}</div>`
+      ? `<div class="ficon">✓</div><div class="ftext"><b>Doğru!</b>${comboChip}${spellingLine}</div>`
       : `<div class="ficon">✕</div><div class="ftext"><b>Doğru cevap:</b> ${currentEx.answer}${(currentEx.roDisplay && currentEx.roDisplay!==currentEx.answer) ? spellingLine : ""}</div>`;
+    if(correct){
+      if(sessionCombo >= COMBO_SHOW && sessionCombo % COMBO_STEP === 0) sfxCombo(); else sfxCorrect();
+    } else {
+      sfxWrong();
+    }
   }
   const skip = document.getElementById('skipBtn'); if(skip) skip.style.display='none';
   const nb = document.getElementById('nextBtn');
@@ -489,6 +510,7 @@ function renderSessionDone(){
   if(wasTest){
     STATE.testHistory.push({date:new Date().toISOString().slice(0,10), score:sessionScore.correct, total:sessionScore.total,
       byCategory: summarizeByCat(testResults)});
+    if(sessionGoalReached) sfxStreak(); else sfxSessionEnd();
     persistNow();   // sınav sonucu ve ödülleri hemen kalıcı olsun
     renderTestResult(pct);
     testMode=false; testResults=[];
@@ -513,6 +535,7 @@ function renderSessionDone(){
       <button class="btn" id="againBtn" style="flex:1">Yeni Tur Başlat</button>
     </div>
   </div>`;
+  if(sessionGoalReached) sfxStreak(); else sfxSessionEnd();
   persistNow();   // tur ödülleri ekranda görünür görünmez diske yazılsın
   const gsb = document.getElementById('guestSaveBtn');
   if(gsb) gsb.addEventListener('click', startGuestSignup);
@@ -806,6 +829,7 @@ function initPalette(){
 
 /* ============================= INIT ============================= */
 initPalette();
+initSfx();
 document.querySelectorAll('.paletteswatch').forEach(b=> b.addEventListener('click', ()=> applyPalette(b.getAttribute('data-palette'))));
 document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click', ()=> switchTab(t.getAttribute('data-tab'))));
 document.querySelectorAll('.levelchip').forEach(c=> c.addEventListener('click', ()=> selectLevel(c.getAttribute('data-level'))));
