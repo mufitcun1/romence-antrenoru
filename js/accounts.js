@@ -117,9 +117,26 @@ async function adminLogin(password){
 async function loginAccount(usernameRaw, password){
   const key = (usernameRaw||"").trim().toLowerCase();
   const acc = ACCOUNTS.accounts[key];
-  if(!acc) return {ok:false, msg:"Böyle bir kullanıcı bulunamadı."};
+  /* reason: çağıran taraf "bu cihazda yok" ile "şifre yanlış"ı ayırt etmeli —
+     ilkinde buluttan geri yükleme denenebilir, ikincisinde denenmemeli. */
+  if(!acc) return {ok:false, reason:"no_user", msg:"Böyle bir kullanıcı bulunamadı.", key};
   const hash = await hashPassword(password, acc.salt);
-  if(hash !== acc.hash) return {ok:false, msg:"Şifre yanlış."};
+  if(hash !== acc.hash) return {ok:false, reason:"bad_password", msg:"Şifre yanlış."};
+  return {ok:true, key};
+}
+
+/* YENİ CİHAZDA GERİ YÜKLEME
+   Hesap listesi cihaza özel olduğu için, kullanıcı telefonunu değiştirdiğinde
+   "böyle bir kullanıcı yok" duvarına çarpardı ve bulut yedeği hiç devreye
+   giremezdi. Burada sıra tersine çevriliyor: yerelde yoksa BULUTTA sorulur;
+   şifre orada doğrulanırsa hesap bu cihaza kurulur ve ilerleme çekilir.
+   Şifre doğrulaması yine sunucuda yapılır — burada yerel bir baypas yok. */
+async function restoreAccountFromCloud(usernameRaw, password){
+  const key = (usernameRaw||"").trim().toLowerCase();
+  const linked = await syncLink(key, password);
+  if(!linked.ok) return {ok:false, reason:linked.reason};
+  await createAccountRecord(key, usernameRaw.trim(), password);
+  pendingSave = true;
   return {ok:true, key};
 }
 
@@ -132,6 +149,7 @@ function enterAsUser(key){
   migrateState(STATE);
   try{ localStorage.setItem('romence_user', key); }catch(e){}
   showAppChrome(true);
+  syncResume(key);        // bu cihazda daha önce bağlanılmışsa arka planda eşitle
   switchTab('practice');
 }
 
@@ -149,6 +167,7 @@ function enterAsGuest(startImmediately){
 
 function logoutUser(){
   currentUser = null; STATE = null; isGuest = false;
+  syncClearSession();     // cihazı paylaşan başka bir aile üyesi bu oturumu devralmasın
   try{ localStorage.removeItem('romence_user'); localStorage.removeItem('romence_mode'); }catch(e){}
   showAppChrome(false);
   authMode = "login";
@@ -239,6 +258,19 @@ function renderAuth(){
     let res;
     if(isLogin){
       res = await loginAccount(username, password);
+      if(!res.ok && res.reason === "no_user"){
+        /* Bu cihazda hesap yok — buluttan geri yüklemeyi dene (yeni telefon). */
+        showErr("Bu cihazda kayıtlı değil, bulut yedeği kontrol ediliyor…");
+        const restored = await restoreAccountFromCloud(username, password);
+        if(restored.ok){
+          res = restored;
+        } else if(restored.reason === "offline" || restored.reason === "unavailable"){
+          /* Hesabın yokluğuna YORMA: geçici bir bağlantı/sunucu sorunu.
+             Aksi hâlde kullanıcı hesabını kaybettiğini sanıp yenisini açar. */
+          showErr("Bu cihazda kayıtlı değil ve bulut yedeğine şu an ulaşılamıyor. Biraz sonra tekrar dene.");
+          submitBtn.disabled = false; submitting = false; return;
+        }
+      }
     } else {
       const dispInp = document.getElementById('authDisplay');
       res = await registerAccount(username, dispInp? dispInp.value : "", password, isGuest ? STATE : null);
@@ -251,6 +283,10 @@ function renderAuth(){
       if(isGuest) clearGuestState();   // ilerleme hesaba taşındı, misafir kopyası gereksiz
     }
     enterAsUser(res.key);
+    /* Bulut senkronu: düz şifreye yalnızca BURADA erişimimiz var (hesap
+       kaydında salt+hash tutuluyor). Arka planda bağlanıyor; başarısız
+       olursa uygulama yerel çalışmaya aynen devam eder. */
+    syncLink(res.key, password).then(r => { if(r.ok) syncNow(); });
   }
   document.getElementById('authSubmitBtn').addEventListener('click', submit);
   passInp.addEventListener('keydown', e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); } });
@@ -301,6 +337,7 @@ function renderAdminAuth(){
     submitting = false;
     if(!res.ok){ showErr(res.msg); return; }
     enterAsUser(res.key);
+    syncLink(res.key, passInp.value).then(r => { if(r.ok) syncNow(); });
   }
   document.getElementById('adminSubmitBtn').addEventListener('click', submit);
   passInp.addEventListener('keydown', e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); } });
@@ -380,6 +417,7 @@ async function doPublish(){
   const ok = await saveAccountsToStorage(ACCOUNTS);
   pendingSave = false;
   if(ok) showSavePill();
+  syncSoon();             // yerel kayıt kesin; bulut arkadan gelir
 }
 /* Sonuç ekranından ana ekrana dönerken: varsa bekleyen ilerlemeyi hemen kaydet. */
 function goHome(){

@@ -49,6 +49,31 @@ function updateGameBar(){
   bar.classList.toggle('goaldone', today >= goal);
 }
 
+/* Bulut yedeği durumu — üst barda kullanıcı adının yanında küçük bir işaret.
+   Sessiz kalması bilinçli: senkron çalışmadığında bile uygulama tam çalışır,
+   bu yüzden hata durumu uyarı değil bilgi olarak gösteriliyor. */
+const SYNC_BADGE_TEXT = {
+  off:            "",
+  linking:        "☁ bağlanıyor",
+  syncing:        "☁ eşitleniyor",
+  ok:             "☁ yedeklendi",
+  offline:        "☁ çevrimdışı",
+  unavailable:    "☁ ulaşılamıyor",
+  error:          "☁ yedeklenemedi",
+  short_password: "☁ şifre kısa",
+};
+function updateSyncBadge(){
+  const el = document.getElementById('syncBadge');
+  if(!el) return;
+  const txt = SYNC_BADGE_TEXT[syncStatus] || "";
+  el.textContent = txt;
+  el.style.display = txt ? '' : 'none';
+  el.className = 'syncbadge ' + syncStatus;
+  el.title = syncStatus === 'short_password'
+    ? 'Bulut yedeği için şifren en az 6 karakter olmalı'
+    : (syncStatus === 'ok' ? 'İlerlemen buluta yedeklendi' : 'Bulut yedeği durumu');
+}
+
 function resetSessionRewards(){
   sessionXp = 0;
   sessionGoalReached = false;
