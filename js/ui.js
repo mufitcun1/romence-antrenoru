@@ -6,28 +6,105 @@ let sessionIdx = 0;
 let sessionScore = {correct:0,total:0};
 let testMode = false;
 let testResults = [];
-let practiceFilter = "mixed"; // mixed | voc | ver | gram | lis | cum
+let practiceFilter = "mixed"; // mixed | voc | ver | gram | lis | ifade | cum
+let currentLevel = "A1";
+
 /* Bu turda kazanılan ödüller — tur sonu ekranında gösterilir, her tur başında
    resetSessionRewards() ile sıfırlanır. */
 let sessionXp = 0;              // bu turda toplanan XP
 let sessionGoalReached = false; // günlük hedef bu turda mı tamamlandı
 let sessionFirstOfDay = false;  // bu tur günün ilk turu mu (bonus için)
 let sessionCombo = 0;           // ardışık doğru sayısı (yanlışta sıfırlanır)
-const FILTER_OPTS = [
-  {key:"mixed", label:"Karışık"},
-  {key:"voc", label:"İsim / Kelime"},
-  {key:"ver", label:"Fiil"},
-  {key:"gram", label:"Cümle / Gramer"},
-  {key:"lis", label:"🎧 Dinleme"},
-  {key:"cum", label:"📝 Cümle Kurma"},
-];
-function ratiosForFilter(filter){
-  if(filter==="voc") return {vocRatio:1, verRatio:0, lisRatio:0, cumRatio:0};
-  if(filter==="ver") return {vocRatio:0, verRatio:1, lisRatio:0, cumRatio:0};
-  if(filter==="gram") return {vocRatio:0, verRatio:0, lisRatio:0, cumRatio:0};
-  if(filter==="lis") return {vocRatio:0, verRatio:0, lisRatio:1, cumRatio:0};
-  if(filter==="cum") return {vocRatio:0, verRatio:0, lisRatio:0, cumRatio:1};
-  return {vocRatio:0.3, verRatio:0.2, lisRatio:0.15, cumRatio:0.15}; // mixed (gram kalanı tamamlar)
+
+/* ============================= SEVİYE İÇERİK KAYDI =============================
+   Pratik, Deneme Sınavı ve İlerleme ekranlarının hepsi tek bir motoru kullanıyor;
+   bu motorun hangi kelime/fiil/cümle havuzuyla ve hangi alıştırma üreticileriyle
+   çalışacağını burası söylüyor. Yeni bir seviye eklemek = buraya bir kayıt
+   eklemek; ekran kodlarına dokunmaya gerek yok.
+
+   Neden accessor fonksiyonu (()=>VOCAB) ve düz referans (VOCAB) değil: A2 verisi
+   ayrı bir dosyadan geliyor ve bu kayıt o dosya yüklenmeden önce de
+   değerlendirilebilir; fonksiyon içine almak erken referansı önlüyor.
+
+   id konvansiyonu: her kaydın id'si dizinin SON elemanıdır (A1 kelimede [4],
+   A2 kelimede [5] — çünkü A2'de bir de cinsiyet/çoğul notu var). itemId() bu
+   farkı gizliyor, böylece motor seviyeden bağımsız çalışıyor. */
+const itemId = a => a[a.length-1];
+
+const LEVELS = {
+  A1: {
+    ready: true,
+    ad: "A1",
+    vocab:      ()=> VOCAB,
+    verbs:      ()=> VERBS,
+    sentences:  ()=> FIXED_SENTENCES,
+    themeNames: ()=> THEME_NAMES,
+    topics:     ()=> GRAMMAR_TOPICS,
+    expressions: null,                  // A1'de kalıp ifade havuzu yok
+    dynamicSentence: genDynamicSentence,
+    listening: true,                    // 332 mp3 ile gerçek Romence telaffuz var
+    ex: ()=> ({voc:exerciseForVocab, ver:exerciseForVerb, lis:exerciseForListening,
+               cum:exerciseForSentence, gram:exerciseForGrammar, ifade:null}),
+    /* İlerleme ekranındaki "genel hazırlık" yüzdesinin ağırlıkları */
+    dashWeights: {voc:0.5, ver:0.3, cum:0.2, ifade:0},
+    testAciklama: "24 soruluk, gerçek A1 sınavı formatına yakın karışık test: kelime bilgisi, fiil çekimi, gramer (edat/soru kelimesi/olumsuzlama/sıfat uyumu/sayılar), dinleme ve cümle kurma.",
+  },
+  A2: {
+    /* data-a2.js yüklenmemişse seviye kapalı kalır — dosya eksikse uygulama
+       çökmek yerine "yakında" ekranını gösterir. */
+    ready: typeof VOCAB_A2 !== "undefined",
+    ad: "A2",
+    vocab:      ()=> VOCAB_A2,
+    verbs:      ()=> VERBS_A2,
+    sentences:  ()=> SENTENCES_A2,
+    themeNames: ()=> THEME_NAMES_A2,
+    topics:     ()=> GRAMMAR_TOPICS_A2,
+    expressions: ()=> EXPRESII_A2,
+    dynamicSentence: null,              // A2'de dinamik cümle üreticisi yok
+    /* A2 kelimelerinin ses dosyası henüz üretilmedi (mevcut 332 mp3 A1'e ait);
+       tarayıcı TTS'i telaffuzu yanlış okuyabildiği için dinleme A2'de kapalı,
+       yerine kalıp ifade alıştırması var. Ses dosyaları eklenince burayı
+       true yapmak ve ex.lis'e bir üretici bağlamak yeterli. */
+    listening: false,
+    ex: ()=> ({voc:exerciseForVocabA2, ver:exerciseForVerbA2, lis:null,
+               cum:exerciseForSentenceA2, gram:exerciseForGrammarA2, ifade:exerciseForExpresie}),
+    dashWeights: {voc:0.45, ver:0.25, cum:0.15, ifade:0.15},
+    testAciklama: "24 soruluk A2 denemesi: kelime bilgisi, fiil çekimi (şimdiki zaman · ortaç · conjunctiv), gramer (dativ, işaret ve ilgi zamirleri, emir kipi, edat-hâl, karşılaştırma, olumsuzluk, bağlaçlar), kalıp ifadeler ve cümle kurma.",
+  },
+  B1: { ready:false, ad:"B1" },
+};
+
+function level(){ return LEVELS[currentLevel] || LEVELS.A1; }
+
+/* Filtre listesi seviyeye göre değişiyor: A1'de dinleme var, A2'de onun yerine
+   kalıp ifade. Ortak dört filtre her seviyede aynı sırada duruyor. */
+function filterOptsFor(lvl){
+  const L = LEVELS[lvl] || LEVELS.A1;
+  const opts = [
+    {key:"mixed", label:"Karışık"},
+    {key:"voc", label:"İsim / Kelime"},
+    {key:"ver", label:"Fiil"},
+    {key:"gram", label:"Cümle / Gramer"},
+  ];
+  if(L.listening) opts.push({key:"lis", label:"🎧 Dinleme"});
+  if(L.expressions) opts.push({key:"ifade", label:"💬 Kalıp İfade"});
+  opts.push({key:"cum", label:"📝 Cümle Kurma"});
+  return opts;
+}
+
+function ratiosForFilter(filter, lvl){
+  const L = LEVELS[lvl] || LEVELS.A1;
+  if(filter==="voc")   return {vocRatio:1, verRatio:0, lisRatio:0, ifadeRatio:0, cumRatio:0};
+  if(filter==="ver")   return {vocRatio:0, verRatio:1, lisRatio:0, ifadeRatio:0, cumRatio:0};
+  if(filter==="gram")  return {vocRatio:0, verRatio:0, lisRatio:0, ifadeRatio:0, cumRatio:0};
+  if(filter==="lis")   return {vocRatio:0, verRatio:0, lisRatio:1, ifadeRatio:0, cumRatio:0};
+  if(filter==="ifade") return {vocRatio:0, verRatio:0, lisRatio:0, ifadeRatio:1, cumRatio:0};
+  if(filter==="cum")   return {vocRatio:0, verRatio:0, lisRatio:0, ifadeRatio:0, cumRatio:1};
+  /* mixed: dördüncü dilim (0.15) seviyeye göre dinleme ya da kalıp ifade olur;
+     gram kalanı tamamlar. */
+  if(L.listening)   return {vocRatio:0.3, verRatio:0.2, lisRatio:0.15, ifadeRatio:0, cumRatio:0.15};
+  if(L.expressions) return {vocRatio:0.3, verRatio:0.2, lisRatio:0, ifadeRatio:0.15, cumRatio:0.15};
+  return {vocRatio:0.3, verRatio:0.2, lisRatio:0, ifadeRatio:0, cumRatio:0.15};
 }
 
 function el(html){ const d=document.createElement('div'); d.innerHTML=html.trim(); return d.firstChild; }
@@ -83,46 +160,60 @@ function resetSessionRewards(){
 }
 
 function buildSessionQueue(n, opts){
+  const L = level();
   opts = opts||{};
-  const nVoc = opts.vocRatio!==undefined ? Math.round(n*opts.vocRatio) : Math.round(n*0.3);
-  const nVer = opts.verRatio!==undefined ? Math.round(n*opts.verRatio) : Math.round(n*0.2);
-  const nLis = opts.lisRatio!==undefined ? Math.round(n*opts.lisRatio) : Math.round(n*0.15);
-  const nCum = opts.cumRatio!==undefined ? Math.round(n*opts.cumRatio) : Math.round(n*0.15);
-  const nGram = Math.max(0, n - nVoc - nVer - nLis - nCum);
-  const vocIds = weightedSample(VOCAB.map(v=>v[4]), nVoc);
-  const verIds = weightedSample(VERBS.map(v=>v[5]), nVer);
+  const pay = (oran, vars) => (opts[oran]!==undefined ? Math.round(n*opts[oran]) : Math.round(n*vars));
+  const nVoc = pay("vocRatio", 0.3);
+  const nVer = pay("verRatio", 0.2);
+  const nLis = L.listening   ? pay("lisRatio", 0.15)   : 0;
+  const nIfade = L.expressions ? pay("ifadeRatio", 0)  : 0;
+  const nCum = pay("cumRatio", 0.15);
+  const nGram = Math.max(0, n - nVoc - nVer - nLis - nIfade - nCum);
+
+  const vocab = L.vocab(), verbs = L.verbs(), sentences = L.sentences();
+  const q = [];
+
+  weightedSample(vocab.map(itemId), nVoc)
+    .forEach(id=> q.push({type:"voc", data: vocab.find(v=> itemId(v)===id)}));
+  weightedSample(verbs.map(itemId), nVer)
+    .forEach(id=> q.push({type:"ver", data: verbs.find(v=> itemId(v)===id)}));
   /* Dinleme de kelime havuzundan örnekleniyor (ayrı bir örnekleme çağrısıyla —
      aynı turda voc ile çakışması kasıtlı sorun değil, farklı beceriyi (kulak) test ediyor). */
-  const lisIds = weightedSample(VOCAB.map(v=>v[4]), nLis);
-  const q = [];
-  vocIds.forEach(id=> q.push({type:"voc", data:VOCAB.find(v=>v[4]===id)}));
-  verIds.forEach(id=> q.push({type:"ver", data:VERBS.find(v=>v[5]===id)}));
-  lisIds.forEach(id=> q.push({type:"lis", data:VOCAB.find(v=>v[4]===id)}));
-  /* Cümle kurma: yarısı sabit (gerçek ders cümleleri, sesi hazır, ustalık
-     takip edilir), yarısı dinamik (sınırsız kombinasyon, id/ustalık yok). */
-  const nCumFixed = Math.round(nCum*0.5);
+  if(nLis > 0){
+    weightedSample(vocab.map(itemId), nLis)
+      .forEach(id=> q.push({type:"lis", data: vocab.find(v=> itemId(v)===id)}));
+  }
+  if(nIfade > 0){
+    const ifadeler = L.expressions();
+    weightedSample(ifadeler.map(itemId), nIfade)
+      .forEach(id=> q.push({type:"ifade", data: ifadeler.find(x=> itemId(x)===id)}));
+  }
+
+  /* Cümle kurma: seviyede dinamik üretici varsa yarısı sabit (gerçek ders
+     cümleleri, sesi hazır, ustalık takip edilir) yarısı dinamik (sınırsız
+     kombinasyon, id/ustalık yok); yoksa tamamı sabit havuzdan. */
+  const nCumFixed = L.dynamicSentence ? Math.round(nCum*0.5) : nCum;
   const nCumDyn = nCum - nCumFixed;
-  const cumIds = weightedSample(FIXED_SENTENCES.map(s=>s[2]), nCumFixed);
-  cumIds.forEach(id=>{
-    const s = FIXED_SENTENCES.find(x=>x[2]===id);
-    q.push({type:"cum", data:{ro:s[0], tr:s[1], id:s[2]}});
+  weightedSample(sentences.map(itemId), nCumFixed).forEach(id=>{
+    const s = sentences.find(x=> itemId(x)===id);
+    q.push({type:"cum", data:{ro:s[0], tr:s[1], id:itemId(s)}});
   });
   for(let i=0;i<nCumDyn;i++){
-    const s = genDynamicSentence();
+    const s = L.dynamicSentence();
     q.push({type:"cum", data:{ro:s.ro, tr:s.tr}});
   }
-  for(let i=0;i<nGram;i++) q.push({type:"gram", data:pick(GRAMMAR_TOPICS)});
+
+  const konular = L.topics();
+  for(let i=0;i<nGram;i++) q.push({type:"gram", data:pick(konular)});
   return shuffle(q);
 }
 
 function nextExercise(){
   if(sessionIdx>=sessionQueue.length){ renderSessionDone(); return; }
   const item = sessionQueue[sessionIdx];
-  if(item.type==="voc") currentEx = exerciseForVocab(item.data);
-  else if(item.type==="ver") currentEx = exerciseForVerb(item.data);
-  else if(item.type==="lis") currentEx = exerciseForListening(item.data);
-  else if(item.type==="cum") currentEx = exerciseForSentence(item.data);
-  else currentEx = exerciseForGrammar(item.data);
+  const uretici = level().ex();
+  const fn = uretici[item.type] || uretici.gram;
+  currentEx = fn(item.data);
   if(item._retry) currentEx.isRetry = true;   // tur sonunda geri gelen yanlış soru
   renderExercise();
 }
@@ -599,18 +690,46 @@ function renderTestResult(pct){
    için (o zaman n bir Event nesnesi olur) tip kontrolü şart. */
 function startPractice(n){
   const count = (typeof n === "number" && n > 0) ? n : 10;
-  sessionQueue = buildSessionQueue(count, ratiosForFilter(practiceFilter));
+  sessionQueue = buildSessionQueue(count, ratiosForFilter(practiceFilter, currentLevel));
   sessionIdx = 0; sessionScore = {correct:0,total:0}; testMode=false;
   resetSessionRewards();
   nextExercise();
 }
+
+/* Bu seviyedeki bütün ustalık takip edilen id'ler — "karşılaşılan/ustalaşılan"
+   sayaçları ve ilerleme ekranı yalnızca aktif seviyenin havuzunu sayar, böylece
+   A1 ile A2 ilerlemesi birbirine karışmaz. */
+function levelItemIds(L){
+  const ids = L.vocab().map(itemId)
+    .concat(L.verbs().map(itemId))
+    .concat(L.sentences().map(itemId));
+  return L.expressions ? ids.concat(L.expressions().map(itemId)) : ids;
+}
+
 function renderPracticeHome(){
-  const totalItems = VOCAB.length+VERBS.length+FIXED_SENTENCES.length;
-  const mastered = Object.values(STATE.mastery).filter(e=>e.box>=MAX_BOX).length;
-  const seen = Object.values(STATE.mastery).filter(e=>e.seen>0).length;
-  const filterLabel = {mixed:"kelime, fiil çekimi, gramer, dinleme ve cümle kurma karışık", voc:"sadece isim/kelime bilgisi",
-    ver:"sadece fiil çekimi", gram:"sadece cümle kurulumu/gramer", lis:"sadece dinleme (kulakla anlama)",
-    cum:"sadece cümle kurma (sabit ders cümleleri + sınırsız yeni kombinasyon)"}[practiceFilter];
+  const L = level();
+  const ids = levelItemIds(L);
+  const totalItems = ids.length;
+  let mastered = 0, seen = 0;
+  ids.forEach(id=>{
+    const e = STATE.mastery[id];
+    if(!e) return;
+    if(e.seen>0) seen++;
+    if(e.box>=MAX_BOX) mastered++;
+  });
+  const filterLabel = {
+    mixed: L.listening
+      ? "kelime, fiil çekimi, gramer, dinleme ve cümle kurma karışık"
+      : "kelime, fiil çekimi, gramer, kalıp ifade ve cümle kurma karışık",
+    voc:"sadece isim/kelime bilgisi",
+    ver:"sadece fiil çekimi",
+    gram:"sadece cümle kurulumu/gramer",
+    lis:"sadece dinleme (kulakla anlama)",
+    ifade:"sadece kalıp ifadeler (günlük konuşma blokları)",
+    cum: L.dynamicSentence
+      ? "sadece cümle kurma (sabit ders cümleleri + sınırsız yeni kombinasyon)"
+      : "sadece cümle kurma (ders cümleleri)"
+  }[practiceFilter];
   /* Akşam olmuş, seri var ve bugünkü hedef henüz tamamlanmamışsa uyar.
      Koşulun tamamı streakAtRisk() içinde — burada yalnızca çiziyoruz. */
   const riskCard = streakAtRisk() ? `<div class="card riskcard">
@@ -619,10 +738,10 @@ function renderPracticeHome(){
     <p>Bugün ${xpRemainingToday()} XP daha kazanırsan serin devam eder — bir tur yeter.</p>
   </div>` : "";
   root().innerHTML = riskCard + `<div class="card">
-    <div class="pill">A1 Pratik</div>
+    <div class="pill">${L.ad} Pratik</div>
     <p style="color:var(--ink-dim);font-size:.9rem;line-height:1.5">Ne çalışmak istersin?</p>
     <div class="filterrow" id="filterRow">
-      ${FILTER_OPTS.map(f=>`<button type="button" class="filterchip${f.key===practiceFilter?' active':''}" data-key="${f.key}">${f.label}</button>`).join("")}
+      ${filterOptsFor(currentLevel).map(f=>`<button type="button" class="filterchip${f.key===practiceFilter?' active':''}" data-key="${f.key}">${f.label}</button>`).join("")}
     </div>
     <p style="color:var(--ink-dim);font-size:.82rem;line-height:1.5">Bu turda ${filterLabel} soruluyor. Bildiklerin gittikçe azalır, bilmediklerin daha sık sorulur.</p>
     <div class="progresslabel" style="text-align:left;margin:14px 0">Karşılaşılan: ${seen}/${totalItems} · Ustalaşılan: ${mastered}/${totalItems}<br>Bugün: ${xpToday()}/${dailyGoal()} XP${goalReachedToday()? " &#10003; günlük hedef tamam" : ""}</div>
@@ -636,7 +755,7 @@ function renderPracticeHome(){
 
 function startTest(){
   testMode = true; testResults=[];
-  sessionQueue = buildSessionQueue(24, {vocRatio:0.3, verRatio:0.2, lisRatio:0.15, cumRatio:0.15});
+  sessionQueue = buildSessionQueue(24, ratiosForFilter("mixed", currentLevel));
   sessionIdx = 0; sessionScore = {correct:0,total:0};
   resetSessionRewards();
   nextExercise();
@@ -648,8 +767,8 @@ function renderTestHome(){
     return `<div class="themerow"><span class="themename">${h.date}</span><span class="themepct">${h.score}/${h.total} (%${p})</span></div>`;
   }).join("");
   root().innerHTML = `<div class="card">
-    <div class="pill">Deneme Sınavı</div>
-    <p style="color:var(--ink-dim);font-size:.9rem;line-height:1.5">24 soruluk, gerçek A1 sınavı formatına yakın karışık test: kelime bilgisi, fiil çekimi, gramer (edat/soru kelimesi/olumsuzlama/sıfat uyumu/sayılar), dinleme ve cümle kurma.</p>
+    <div class="pill">${level().ad} Deneme Sınavı</div>
+    <p style="color:var(--ink-dim);font-size:.9rem;line-height:1.5">${level().testAciklama}</p>
     <button class="btn" id="startTestBtn" style="width:100%;margin-top:6px">Sınavı Başlat</button>
   </div>
   ${hist.length? `<div class="card"><h2 style="margin-top:0">Geçmiş Sonuçlar</h2>${histRows}</div>`:""}`;
@@ -657,7 +776,9 @@ function renderTestHome(){
 }
 
 function renderDashboard(){
-  const vocIds = VOCAB.map(v=>v[4]), verIds = VERBS.map(v=>v[5]), sentIds = FIXED_SENTENCES.map(s=>s[2]);
+  const L = level();
+  const vocIds = L.vocab().map(itemId), verIds = L.verbs().map(itemId), sentIds = L.sentences().map(itemId);
+  const ifadeIds = L.expressions ? L.expressions().map(itemId) : [];
   function stats(ids){
     // scoreSum: her öğenin box'ı + mevcut box içindeki kısmi streak ilerlemesi
     // (böylece tek bir doğru cevap bile çubuğu hemen biraz hareket ettirir,
@@ -672,18 +793,21 @@ function renderDashboard(){
     });
     return {mastered,total,seen,pct: total? Math.round(100*scoreSum/(total*MAX_BOX)):0};
   }
-  const vs = stats(vocIds), fs = stats(verIds), cs = stats(sentIds);
+  const vs = stats(vocIds), fs = stats(verIds), cs = stats(sentIds), is = stats(ifadeIds);
   const st = STATE.streak || {current:0, longest:0, freezes:0};
-  const overallPct = Math.round((vs.pct*0.5+fs.pct*0.3+cs.pct*0.2));
+  const w = L.dashWeights;
+  const overallPct = Math.round(vs.pct*w.voc + fs.pct*w.ver + cs.pct*w.cum + is.pct*w.ifade);
+  const temaAdlari = L.themeNames();
   let themeRows = "";
-  Object.keys(THEME_NAMES).forEach(t=>{
-    const ids = VOCAB.filter(v=>v[0]===t).map(v=>v[4]);
+  Object.keys(temaAdlari).forEach(t=>{
+    const ids = L.vocab().filter(v=>v[0]===t).map(itemId);
+    if(!ids.length) return;
     const s = stats(ids);
-    themeRows += `<div class="themerow"><span class="themename">${categoryIconSVG(t,18)}${THEME_NAMES[t]}</span><span class="themepct">${s.pct}%</span></div>`;
+    themeRows += `<div class="themerow"><span class="themename">${categoryIconSVG(t,18)}${temaAdlari[t]}</span><span class="themepct">${s.pct}%</span></div>`;
   });
   root().innerHTML = `
   <div class="statgrid">
-    <div class="stat"><div class="n">%${overallPct}</div><div class="l">A1 HAZIRLIK</div></div>
+    <div class="stat"><div class="n">%${overallPct}</div><div class="l">${L.ad} HAZIRLIK</div></div>
     <div class="stat"><div class="n">${vs.seen}/${vs.total}</div><div class="l">KARŞILAŞILAN KELİME</div></div>
     <div class="stat"><div class="n">${fs.seen}/${fs.total}</div><div class="l">KARŞILAŞILAN FİİL</div></div>
   </div>
@@ -706,8 +830,10 @@ function renderDashboard(){
     <div class="barwrap"><div class="bar" style="width:${vs.pct}%"></div></div>
     <div class="row" style="margin-top:12px"><span>Fiil çekimi</span><span>%${fs.pct} · ustalaşılan ${fs.mastered}/${fs.total}</span></div>
     <div class="barwrap"><div class="bar" style="width:${fs.pct}%"></div></div>
-    <div class="row" style="margin-top:12px"><span>Cümle kurma (sabit havuz)</span><span>%${cs.pct} · ustalaşılan ${cs.mastered}/${cs.total}</span></div>
+    <div class="row" style="margin-top:12px"><span>Cümle kurma${L.dynamicSentence ? " (sabit havuz)" : ""}</span><span>%${cs.pct} · ustalaşılan ${cs.mastered}/${cs.total}</span></div>
     <div class="barwrap"><div class="bar" style="width:${cs.pct}%"></div></div>
+    ${ifadeIds.length ? `<div class="row" style="margin-top:12px"><span>Kalıp ifadeler</span><span>%${is.pct} · ustalaşılan ${is.mastered}/${is.total}</span></div>
+    <div class="barwrap"><div class="bar" style="width:${is.pct}%"></div></div>` : ""}
     <p style="color:var(--ink-dim);font-size:.78rem;margin:12px 0 0">"Ustalık" bir kelime/fiili/cümleyi üst üste 3 kez doğru bilince artar — bu yüzden yavaş ama kalıcı ilerler. "Karşılaşılan" ise en az bir kez soruldu demek. Dinamik (sınırsız) cümleler her seferinde yeni olduğu için ustalık takibine dahil değil, sadece pratik amaçlı.</p>
   </div>
   <div class="card"><h2 style="margin-top:0">Konu Bazlı Kelime Ustalığı</h2>${themeRows}</div>
@@ -807,15 +933,22 @@ function switchTab(tab){
 }
 
 /* ============================= SEVİYE SEÇİMİ (A1/A2/B1) =============================
-   Şu an yalnızca A1 içeriği hazır. A2 ve B1 chip'leri ileride gerçek içerik
-   eklendiğinde aynı Pratik/Deneme Sınavı/İlerleme motoruyla çalışacak; şimdilik
-   tıklanınca "yakında" ekranı gösteriyoruz, A1 verisine/dosyasına dokunmuyoruz. */
-let currentLevel = "A1";
+   İçeriği hazır olan her seviye (LEVELS[...].ready) aynı Pratik/Deneme Sınavı/
+   İlerleme motoruyla çalışır; hazır olmayan seviye "yakında" ekranını gösterir.
+   Seviye değişince yarım kalan bir tur varsa terk ediliyor (ana ekrana dönülüyor),
+   çünkü sessionQueue bir önceki seviyenin havuzundan üretilmişti. */
 function selectLevel(lvl){
+  if(!LEVELS[lvl]) return;
+  const oncekiSeviye = currentLevel;
   currentLevel = lvl;
   document.querySelectorAll('.levelchip').forEach(c=> c.classList.toggle('active', c.getAttribute('data-level')===lvl));
   const tabsRow = document.getElementById('tabsRow');
-  if(lvl==="A1"){
+  if(LEVELS[lvl].ready){
+    /* Aktif filtre bu seviyede yoksa (örn. A1'de dinleme seçiliyken A2'ye
+       geçmek) karışığa düşüyoruz — yoksa hiç soru üretilemeyen bir tur olurdu. */
+    if(lvl !== oncekiSeviye && !filterOptsFor(lvl).some(f=> f.key===practiceFilter)){
+      practiceFilter = "mixed";
+    }
     tabsRow.style.display = '';
     switchTab(activeTab);
   } else {
