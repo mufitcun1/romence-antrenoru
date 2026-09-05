@@ -204,6 +204,25 @@ try {
     yuksekPuanMetni.includes("A2 seviyesine hazırsın") && !yuksekPuanMetni.includes("A1"),
     yuksekPuanMetni.split("\n").find(l=>l.includes("hazırsın")) || "");
 
+  /* Sınav geçmişi seviyeye göre ayrılmalı: A2 sonucu A1'in geçmişinde
+     görünmemeli (aksi halde kullanıcı A1 sınavını hiç yapmadan A1 ekranında
+     sonuç görür). Metin yerine satır sayısına bakıyoruz: başlık CSS ile büyük
+     harfe çevrildiği için innerText araması yanıltıcı sonuç veriyor. */
+  await page.locator('.levelchip[data-level="A1"]').click();
+  await page.locator('.tab[data-tab="test"]').click();
+  await page.waitForSelector("#startTestBtn");
+  kontrol("A2 sınav sonucu A1 geçmişinde görünmüyor",
+    await page.locator("#app-root .themerow").count() === 0,
+    `A1 ekranındaki geçmiş satırı: ${await page.locator("#app-root .themerow").count()}`);
+  await page.locator('.levelchip[data-level="A2"]').click();
+  await page.locator('.tab[data-tab="test"]').click();
+  await page.waitForSelector("#startTestBtn");
+  kontrol("A2 sınav sonucu A2 geçmişinde görünüyor",
+    await page.locator("#app-root .themerow").count() === 1,
+    `A2 ekranındaki geçmiş satırı: ${await page.locator("#app-root .themerow").count()}`);
+  kontrol("Seviye değişince yarım sınav durumu temizlendi",
+    await page.evaluate(()=> testMode === false && testResults.length === 0 && sessionQueue.length === 0));
+
   /* ---------- 5. A2 ilerleme ekranı ---------- */
   console.log("\n5) A2 ilerleme ekranı");
   await page.locator('.tab[data-tab="dash"]').click();

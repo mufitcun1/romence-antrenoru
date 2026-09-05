@@ -624,7 +624,8 @@ function renderSessionDone(){
   grantSessionEndXP(wasTest);
   pendingSave = true;
   if(wasTest){
-    STATE.testHistory.push({date:new Date().toISOString().slice(0,10), score:sessionScore.correct, total:sessionScore.total,
+    STATE.testHistory.push({date:new Date().toISOString().slice(0,10), level: currentLevel,
+      score:sessionScore.correct, total:sessionScore.total,
       byCategory: summarizeByCat(testResults)});
     if(sessionGoalReached) sfxStreak(); else sfxSessionEnd();
     persistNow();   // sınav sonucu ve ödülleri hemen kalıcı olsun
@@ -767,8 +768,12 @@ function startTest(){
   resetSessionRewards();
   nextExercise();
 }
+/* A2 gelmeden önce kaydedilmiş sonuçlarda "level" alanı yok — hepsi A1'di. */
+function seviyeSinavlari(lvl){
+  return (STATE.testHistory||[]).filter(h=> (h.level||"A1") === lvl);
+}
 function renderTestHome(){
-  const hist = STATE.testHistory||[];
+  const hist = seviyeSinavlari(currentLevel);
   let histRows = hist.slice(-5).reverse().map(h=>{
     const p = h.total? Math.round(100*h.score/h.total):0;
     return `<div class="themerow"><span class="themename">${h.date}</span><span class="themepct">${h.score}/${h.total} (%${p})</span></div>`;
@@ -846,7 +851,7 @@ function renderDashboard(){
   <div class="card"><h2 style="margin-top:0">Konu Bazlı Kelime Ustalığı</h2>${themeRows}</div>
   <div class="card"><h2 style="margin-top:0">Genel</h2>
     <div class="row"><span>Tamamlanan tur/sınav</span><span>${STATE.sessionsCompleted||0}</span></div>
-    <div class="row" style="margin-top:8px"><span>Deneme sınavı sayısı</span><span>${(STATE.testHistory||[]).length}</span></div>
+    <div class="row" style="margin-top:8px"><span>Deneme sınavı sayısı</span><span>${seviyeSinavlari(currentLevel).length}</span></div>
   </div>
   ${currentUser==='admin' ? `<div class="card" id="adminToolsCard">
     <h2 style="margin-top:0">Yönetici Araçları</h2>
@@ -948,6 +953,10 @@ function selectLevel(lvl){
   if(!LEVELS[lvl]) return;
   const oncekiSeviye = currentLevel;
   currentLevel = lvl;
+  /* Yarım bırakılmış tur/sınav durumu yeni seviyeye taşınmasın: bir sonraki
+     tur zaten hepsini sıfırlıyor ama arada testMode=true kalması sonucu
+     yanlış seviyeye yazma riski taşıyor. */
+  testMode = false; testResults = []; sessionQueue = []; sessionIdx = 0;
   document.querySelectorAll('.levelchip').forEach(c=> c.classList.toggle('active', c.getAttribute('data-level')===lvl));
   const tabsRow = document.getElementById('tabsRow');
   if(LEVELS[lvl].ready){
