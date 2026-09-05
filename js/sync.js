@@ -38,12 +38,34 @@ const SYNC_EMAIL_DOMAIN = "rotrainer.app";
 const SYNC_SESSION_KEY  = "romence_sync_session";
 const SYNC_MIN_PASSWORD = 6;      // Supabase Auth'un alt sınırı
 const SYNC_TIMEOUT_MS   = 12000;
+/* Kayıt sırasındaki "bu ad bulutta boş mu" kontrolü kullanıcıyı bekletiyor.
+   Tek istek 12 sn, syncLink iki istek yapabildiği için en kötü hâlde 24 sn
+   eder — kötü şebekede kabul edilemez. Bu süreden sonra kayıt YEREL olarak
+   tamamlanıyor, hesap "unlinked" işaretleniyor ve bağlanma bir sonraki
+   fırsata kalıyor (bkz. registerAccount, M2/M4). */
+const SYNC_PROBE_MS     = 6000;
 const SYNC_DEBOUNCE_MS  = 4000;   // yazma sonrası buluta gönderme gecikmesi
 
 let syncSession = null;   // {access_token, refresh_token, expires_at, user_id, username}
-let syncStatus  = "off";  // off | linking | syncing | ok | offline | error | short_password
+/* off            : giriş yapılmamış ya da misafir — bulut hiç ilgilendirmiyor
+   unlinked       : gerçek bir hesap var ama bu cihazda bulut oturumu YOK.
+                    Kullanıcı yedeksiz; bu durumun GÖRÜNÜR olması şart (M2).
+   linking        : şu an bağlanılıyor
+   syncing        : çekiliyor/gönderiliyor
+   ok             : yedeklendi
+   offline        : ağ yok · unavailable: sunucu geçici olarak yanıt vermiyor
+   error          : kalıcı bir hata
+   short_password : şifre Supabase'in alt sınırının altında (bkz. M1) */
+let syncStatus  = "off";
 let syncTimer   = null;
 let syncBusy    = false;
+
+/* Durumu tek yerden değiştiriyoruz: rozeti güncellemeyi unutmak, senkronun
+   sessizce başarısız olmasının en kolay yoluydu. */
+function syncSetStatus(status){
+  syncStatus = status;
+  if(typeof updateSyncBadge === "function") updateSyncBadge();
+}
 
 /* ============================= ALT KATMAN ============================= */
 
@@ -99,9 +121,8 @@ function syncLoadSession(){
 }
 function syncClearSession(){
   syncSession = null;
-  syncStatus = "off";
   try{ localStorage.removeItem(SYNC_SESSION_KEY); }catch(e){}
-  if(typeof updateSyncBadge === "function") updateSyncBadge();
+  syncSetStatus("off");
 }
 
 function syncSetSession(payload, username){
@@ -133,6 +154,9 @@ async function syncEnsureToken(){
   }
   if(res.temporary) return null;        // ağ/sunucu geçici: oturumu SİLME, sonra dene
   syncClearSession();                    // token gerçekten geçersiz
+  /* Hesap duruyor, yalnızca bulut oturumu düştü — "off" demek bunu görünmez
+     kılardı; kullanıcı yeniden bağlanmaya davet edilmeli. */
+  syncSetStatus("unlinked");
   return null;
 }
 
@@ -140,17 +164,30 @@ async function syncEnsureToken(){
    Yerel giriş başarılı olduktan SONRA çağrılır (şifre yalnızca o an elde).
    Önce giriş denenir; kullanıcı sunucuda yoksa kaydedilir. Bu sıra kasıtlı:
    mevcut aile hesapları ilk girişlerinde sessizce buluta bağlanmış olur. */
+/* syncLink'i sınırlı süreyle dener; süre dolarsa "unavailable" döner ama
+   arkadaki istek iptal edilmez — sonradan başarılı olursa oturum yine kurulur
+   ve durum kendiliğinden "ok"a döner. */
+function syncLinkWithin(username, password, ms){
+  return Promise.race([
+    syncLink(username, password),
+    new Promise(resolve => setTimeout(()=> resolve({ok:false, reason:"unavailable", timedOut:true}), ms)),
+  ]);
+}
+
 async function syncLink(username, password){
   if(!username || !password) return {ok:false, reason:"missing"};
   if(password.length < SYNC_MIN_PASSWORD){
-    syncStatus = "short_password";
-    if(typeof updateSyncBadge === "function") updateSyncBadge();
+    syncSetStatus("short_password");
     return {ok:false, reason:"short_password"};
   }
-  syncStatus = "linking";
-  if(typeof updateSyncBadge === "function") updateSyncBadge();
+  syncSetStatus("linking");
 
   const email = syncEmailFor(username);
+  /* created: bulut hesabı BU çağrıda mı açıldı, yoksa zaten var mıydı?
+     Kayıt akışı bunu bilmeli — "zaten vardı" demek, kullanıcının aslında
+     kendi hesabına yeni bir cihazdan girdiği ve ilerlemesinin geri geleceği
+     anlamına gelir (bkz. registerAccount, M4). */
+  let created = false;
   let res = await syncFetch("/auth/v1/token?grant_type=password", {
     method: "POST",
     body: {email, password},
@@ -158,8 +195,7 @@ async function syncLink(username, password){
 
   if(!res.ok && res.temporary){
     /* Ağ yok ya da sunucu geçici olarak bozuk: hesabın yokluğuna YORMA. */
-    syncStatus = res.offline ? "offline" : "unavailable";
-    if(typeof updateSyncBadge === "function") updateSyncBadge();
+    syncSetStatus(res.offline ? "offline" : "unavailable");
     return {ok:false, reason: res.offline ? "offline" : "unavailable"};
   }
 
@@ -168,32 +204,84 @@ async function syncLink(username, password){
     const up = await syncFetch("/auth/v1/signup", {method:"POST", body:{email, password}});
     if(up.ok && up.data && up.data.access_token){
       res = up;
+      created = true;
     } else if(up.ok){
       /* Kayıt oldu ama oturum dönmedi: projede e-posta onayı AÇIK demektir.
          Türetilmiş e-postaya onay maili gidemeyeceği için senkron çalışamaz. */
-      syncStatus = "error";
-      if(typeof updateSyncBadge === "function") updateSyncBadge();
+      syncSetStatus("error");
       return {ok:false, reason:"email_confirmation_required"};
     } else if(up.temporary){
-      syncStatus = up.offline ? "offline" : "unavailable";
-      if(typeof updateSyncBadge === "function") updateSyncBadge();
+      syncSetStatus(up.offline ? "offline" : "unavailable");
       return {ok:false, reason: up.offline ? "offline" : "unavailable"};
     } else {
       /* Gerçek ret: kullanıcı zaten var ama şifre tutmuyor, ya da şifre
          sunucunun kurallarına uymuyor. */
-      syncStatus = "error";
-      if(typeof updateSyncBadge === "function") updateSyncBadge();
+      syncSetStatus("error");
       return {ok:false, reason:"signup_failed", detail: up.data};
     }
   }
   if(!syncSetSession(res.data, username)){
-    syncStatus = "error";
-    if(typeof updateSyncBadge === "function") updateSyncBadge();
+    syncSetStatus("error");
     return {ok:false, reason:"no_session"};
   }
-  syncStatus = "ok";
-  if(typeof updateSyncBadge === "function") updateSyncBadge();
-  return {ok:true};
+  syncSetStatus("ok");
+  return {ok:true, created};
+}
+
+/* ŞİFRE DEĞİŞTİRME — BULUT TARAFI (M1)
+   Supabase'in ucu: PUT /auth/v1/user, gövde {"password": "..."},
+   Authorization: Bearer <access_token> (supabase-js'teki updateUser aynı ucu
+   çağırıyor). 5 Eylül 2026'da canlı projede uçtan uca DOĞRULANDI: 200
+   dönüyor, eski şifre çalışmaz oluyor, yeni şifreyle giriş yapılıyor ve
+   6 karakterden kısa şifre 422/weak_password ile reddediliyor.
+   Projede "şifre değişiminde yeniden kimlik doğrulama" ayarı AÇIK olursa bu
+   uç e-postayla gönderilen bir nonce ister; türetilmiş adrese posta
+   gidemeyeceği için o ayar KAPALI kalmalı (şu an kapalı, proje notlarında
+   yazılı). Ayrıca uç "yakın zamanda giriş yapmış olma" koşulu arayabildiği
+   için önce TAZE bir oturum alıyoruz — bu aynı zamanda eski şifreyi
+   sunucuda doğrulamış oluyor. */
+async function syncChangePassword(username, oldPassword, newPassword){
+  if(!username || !newPassword) return {ok:false, reason:"missing"};
+  if(newPassword.length < SYNC_MIN_PASSWORD) return {ok:false, reason:"short_password"};
+  const email = syncEmailFor(username);
+
+  const signin = await syncFetch("/auth/v1/token?grant_type=password", {
+    method: "POST",
+    body: {email, password: oldPassword},
+  });
+  if(!signin.ok && signin.temporary)
+    return {ok:false, reason: signin.offline ? "offline" : "unavailable"};
+
+  if(!signin.ok){
+    /* Bulutta bu şifreyle hesap yok. En yaygın hâli: eski şifre 6 karakterden
+       kısaydı, bu yüzden bulut hesabı hiç oluşmamıştı — yeni (uzun) şifreyle
+       şimdi oluşuyor. Ad başkasındaysa syncLink "signup_failed" der. */
+    const linked = await syncLink(username, newPassword);
+    if(linked.ok) return {ok:true, created: linked.created};
+    return {ok:false, reason: linked.reason};
+  }
+
+  if(!syncSetSession(signin.data, username)) return {ok:false, reason:"no_session"};
+
+  const upd = await syncFetch("/auth/v1/user", {
+    method: "PUT",
+    token: syncSession.access_token,
+    body: {password: newPassword},
+  });
+  if(!upd.ok){
+    if(upd.temporary) return {ok:false, reason: upd.offline ? "offline" : "unavailable"};
+    return {ok:false, reason:"update_failed", detail: upd.data};
+  }
+
+  /* Şifre değişince sunucu eski oturumları geçersiz kılabiliyor; yeni şifreyle
+     taze bir oturum alıp saklıyoruz ki senkron kesintiye uğramasın. */
+  const again = await syncFetch("/auth/v1/token?grant_type=password", {
+    method: "POST",
+    body: {email, password: newPassword},
+  });
+  if(again.ok && again.data) syncSetSession(again.data, username);
+  syncSetStatus("ok");
+  return {ok:true, created:false};
 }
 
 /* ============================= ÇEK / GÖNDER ============================= */
@@ -288,13 +376,14 @@ function mergeStates(local, remote){
 async function syncNow(){
   if(syncBusy || !syncSession || !STATE || isGuest) return {ok:false, reason:"skip"};
   syncBusy = true;
-  syncStatus = "syncing";
-  if(typeof updateSyncBadge === "function") updateSyncBadge();
+  syncSetStatus("syncing");
   try{
     const pulled = await syncPull();
     if(!pulled.ok){
-      syncStatus = (pulled.reason === "offline") ? "offline"
-                 : (pulled.reason === "unavailable") ? "unavailable" : "error";
+      syncSetStatus((pulled.reason === "offline")     ? "offline"
+                  : (pulled.reason === "unavailable")  ? "unavailable"
+                  /* Oturum düşmüş: hesap yedeksiz kaldı, görünür olsun. */
+                  : (pulled.reason === "no_session")   ? "unlinked" : "error");
       return pulled;
     }
     if(pulled.data){
@@ -316,9 +405,10 @@ async function syncNow(){
       }
     }
     const pushed = await syncPush(STATE);
-    syncStatus = pushed.ok ? "ok"
-               : (pushed.reason === "offline") ? "offline"
-               : (pushed.reason === "unavailable") ? "unavailable" : "error";
+    syncSetStatus(pushed.ok                           ? "ok"
+                : (pushed.reason === "offline")       ? "offline"
+                : (pushed.reason === "unavailable")   ? "unavailable"
+                : (pushed.reason === "no_session")    ? "unlinked" : "error");
     return pushed;
   }finally{
     syncBusy = false;
@@ -338,12 +428,22 @@ function syncSoon(){
    kullanıcı o hesapsa arka planda eşitle. */
 function syncResume(username){
   syncLoadSession();
-  if(!syncSession) { syncStatus = "off"; return; }
+  /* M2 — SESSİZ BAŞARISIZLIK BURADAYDI. Otomatik girişte şifre elimizde
+     olmadığı için syncLink çağrılamıyor; eskiden burada "off" deyip
+     çıkıyorduk ve rozet boş görünüyordu. Çevrimdışıyken kayıt olan (ya da
+     oturumu düşen) kullanıcı, elle çıkış yapıp tekrar girmedikçe sonsuza
+     kadar yedeksiz kalıyordu — üstelik bunu hiç bilmeden. Artık durum
+     "unlinked" ve arayüzde tıklanabilir bir uyarı olarak görünüyor. */
+  if(!syncSession){
+    syncSetStatus((typeof isGuest !== "undefined" && isGuest) ? "off" : "unlinked");
+    return;
+  }
   if(username && syncSession.username && syncSession.username !== username){
     /* Cihazda başka bir aile üyesi giriş yaptı: eski oturumu taşıma. */
     syncClearSession();
+    syncSetStatus("unlinked");
     return;
   }
-  syncStatus = "syncing";
+  syncSetStatus("syncing");
   syncNow();
 }

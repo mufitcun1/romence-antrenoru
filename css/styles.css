@@ -209,6 +209,21 @@ h2:first-child{margin-top:0}
 .riskcard .qtext{color:var(--bad)}
 .riskcard p{color:var(--ink-dim);font-size:.85rem;line-height:1.5;margin:6px 0 0}
 
+/* --- Bulut yedeği uyarı kartı (hesap var, yedek yok) ---
+   Seri riski kartıyla aynı görsel dil, ama kapatılabilir: her ekran
+   çiziminde aynı uyarıyı görmek zamanla görünmez olur. */
+.synccard{position:relative;border-color:var(--accent);background:var(--panel)}
+.synccard .pill{background:var(--accent);color:var(--accent-ink)}
+.synccard p{color:var(--ink-dim);font-size:.85rem;line-height:1.5;margin:6px 0 0}
+.synccardx{position:absolute;top:8px;right:10px;background:none;border:none;color:var(--ink-dim);
+  font-size:.9rem;line-height:1;cursor:pointer;padding:6px;border-radius:6px}
+.synccardx:hover{background:var(--chip);color:var(--ink)}
+
+/* --- Kayıt ekranındaki şifre uyarısı (kurtarma yolu yok) --- */
+.pwnote{margin-top:10px;padding:10px 12px;border-radius:10px;background:var(--chip);
+  color:var(--ink-dim);font-size:.8rem;line-height:1.5}
+.pwnote b{color:var(--ink)}
+
 /* --- Tekrar sorusu rozeti (yanlış yapılan soru tur sonunda geri gelir) --- */
 .retrytag{color:var(--accent);font-weight:700}
 
@@ -225,7 +240,10 @@ h2:first-child{margin-top:0}
 /* --- Bulut yedeği durumu (üst bar) --- */
 .syncbadge{font-size:.68rem;color:var(--ink-dim);margin-left:8px;white-space:nowrap}
 .syncbadge.ok{color:var(--good)}
-.syncbadge.error,.syncbadge.short_password{color:var(--bad)}
+.syncbadge.error,.syncbadge.short_password,.syncbadge.unlinked{color:var(--bad)}
+/* Kullanıcının düzeltebileceği durumlarda rozet bir düğmedir: tıklanabilir
+   olduğu görünmeli, yoksa "yedek yok" yalnızca bir suçlama olurdu. */
+.syncbadge.clickable{cursor:pointer;text-decoration:underline;text-underline-offset:2px;font-weight:600}
 
 /* --- Karşılama ekranı (kayıt duvarı yerine) --- */
 .welcome{text-align:center}

@@ -83,8 +83,37 @@ async function registerAccount(usernameRaw, displayNameRaw, password, seedData){
   if(key==="admin") return {ok:false, msg:'Bu kullanıcı adı ayrılmış — "Admin girişi" bağlantısını kullan.'};
   if(!/^[a-z0-9_.]{2,20}$/i.test(key)) return {ok:false, msg:"Kullanıcı adı yalnızca harf/rakam/._ içerebilir (2-20 karakter)."};
   if(ACCOUNTS.accounts[key]) return {ok:false, msg:"Bu kullanıcı adı zaten alınmış."};
-  if(!password || password.length<3) return {ok:false, msg:"Şifre en az 3 karakter olmalı."};
-  return createAccountRecord(key, (displayNameRaw||"").trim() || usernameRaw.trim(), password, seedData);
+  /* M1 — ALT SINIR TEK KAYNAKTAN. Burada 3, Supabase'de 6 yazıyordu; arada
+     kalan kullanıcı yerel hesap açabiliyor ama bulut hesabı HİÇ oluşmuyordu.
+     Telefonunu değiştirince "böyle bir kullanıcı yok" duvarına çarpıp tüm
+     ilerlemesini kaybediyordu. İki yerde iki ayrı sayı bulunması hatanın kök
+     nedeniydi; sabit artık yalnızca sync.js'te. */
+  if(!password || password.length < SYNC_MIN_PASSWORD)
+    return {ok:false, msg:"Şifre en az " + SYNC_MIN_PASSWORD + " karakter olmalı."};
+
+  /* M4 — KULLANICI ADI BULUTTA KÜRESEL OLARAK TEKİL.
+     Yerelde ad yalnızca bu cihazda tekil, bulutta ise "ad@rotrainer.app"
+     olarak herkes için tekil. Kontrolü yerel kayıttan ÖNCE yapıyoruz: aksi
+     hâlde kullanıcı hesabını açmış olur, sonra senkronun sessizce kapalı
+     kaldığını hiç öğrenemezdi. syncLink zaten önce giriş, sonra kayıt
+     deniyor — yani aynı çağrı hem "bu ad boş mu" sorusunu yanıtlıyor hem de
+     boşsa bulut hesabını oluşturuyor; ayrı bir "ad sorgulama" ucu açmıyoruz
+     (o uç, herkesin kullanıcı adı listesini taramasına da izin verirdi). */
+  const linked = await syncLinkWithin(key, password, SYNC_PROBE_MS);
+  if(!linked.ok && linked.reason === "signup_failed")
+    return {ok:false, msg:"Bu kullanıcı adı alınmış — başka bir tane seç."};
+  /* offline / unavailable / email_confirmation_required: kontrol yapılamadı.
+     Kaydı ENGELLEMİYORUZ (internetsiz kullanıcıyı kapıda bırakmak daha kötü);
+     hesap "unlinked" işaretiyle açılır ve bağlanma anında ad çakışırsa
+     kullanıcıya ad değiştirme sunulur (bkz. renderSyncConnect). */
+
+  const rec = await createAccountRecord(key, (displayNameRaw||"").trim() || usernameRaw.trim(), password, seedData);
+  rec.linked   = linked.ok;
+  /* created===false: bu ad+şifre bulutta ZATEN vardı, yani kullanıcı aslında
+     kendi hesabına yeni bir cihazdan giriyor. Sonraki syncNow ilerlemesini
+     geri getirir; arayüz bunu ona söylemeli. */
+  rec.restored = linked.ok && linked.created === false;
+  return rec;
 }
 
 /* Admin girişi: ÖNCEDEN burada kaynak kodunda açık bir sabit şifre
@@ -99,9 +128,13 @@ async function registerAccount(usernameRaw, displayNameRaw, password, seedData){
    belirlemiş olur — bu yüzden yayına/duyuruya açmadan önce bu adımı SEN
    (uygulamanın sahibi) tamamlamalısın. */
 async function adminLogin(password){
-  if(!password || password.length<3) return {ok:false, msg:"Şifre en az 3 karakter olmalı."};
+  if(!password) return {ok:false, msg:"Şifre boş olamaz."};
   const acc = ACCOUNTS.accounts['admin'];
   if(!acc || !acc.hash){
+    /* Alt sınır yalnızca şifre BELİRLENİRKEN geçerli. Doğrulama tarafına da
+       koysaydık, eski kısa şifreli admin kendi hesabından kilitlenirdi. */
+    if(password.length < SYNC_MIN_PASSWORD)
+      return {ok:false, msg:"Şifre en az " + SYNC_MIN_PASSWORD + " karakter olmalı."};
     const salt = randomSaltHex();
     const hash = await hashPassword(password, salt);
     const data = migrateState((acc && acc.data) ? acc.data : {mastery:{}, testHistory:[], sessionsCompleted:0});
@@ -137,7 +170,77 @@ async function restoreAccountFromCloud(usernameRaw, password){
   if(!linked.ok) return {ok:false, reason:linked.reason};
   await createAccountRecord(key, usernameRaw.trim(), password);
   pendingSave = true;
-  return {ok:true, key};
+  return {ok:true, key, linked:true, restored:true};
+}
+
+/* ŞİFRE DEĞİŞTİRME (M1)
+   SIRA KRİTİK: önce BULUT, başarılı olursa yerel. Ters sırada yaparsak ve
+   bulut çağrısı düşerse iki taraftaki şifre ayrışır — kullanıcı bu cihazda
+   girebilir ama yeni cihazda giremez; sessiz ve teşhisi zor bir bozulma.
+   Bu yüzden şifre değiştirmek internet gerektiriyor; çevrimdışıyken net bir
+   mesajla reddediliyor. */
+async function changePassword(key, oldPassword, newPassword){
+  const acc = ACCOUNTS && ACCOUNTS.accounts[key];
+  if(!acc) return {ok:false, msg:"Hesap bulunamadı."};
+  /* Mevcut şifre doğrulaması yerelde: cihazı eline geçiren birinin şifreyi
+     bilmeden değiştirmesini engeller. (hash yoksa henüz şifre belirlenmemiş
+     bir admin kaydıdır — o durumda eski şifre sorulmaz.) */
+  if(acc.hash){
+    const h = await hashPassword(oldPassword || "", acc.salt);
+    if(h !== acc.hash) return {ok:false, msg:"Mevcut şifren yanlış."};
+  }
+  if(!newPassword || newPassword.length < SYNC_MIN_PASSWORD)
+    return {ok:false, msg:"Yeni şifre en az " + SYNC_MIN_PASSWORD + " karakter olmalı."};
+  if(newPassword === oldPassword) return {ok:false, msg:"Yeni şifre eskisiyle aynı."};
+
+  const cloud = await syncChangePassword(key, oldPassword, newPassword);
+  if(!cloud.ok){
+    if(cloud.reason === "offline")
+      return {ok:false, msg:"Şifre değiştirmek için internet gerekiyor — yoksa bu cihazdaki şifrenle bulut şifresi ayrışır ve yeni telefonunda giriş yapamazsın."};
+    if(cloud.reason === "unavailable")
+      return {ok:false, msg:"Sunucuya şu an ulaşılamıyor. Biraz sonra tekrar dene — şifren değişmedi."};
+    if(cloud.reason === "signup_failed")
+      return {ok:false, msg:"Bu kullanıcı adı bulutta başka bir hesaba ait. Buluta bağlanırken farklı bir kullanıcı adı seçmen gerekiyor."};
+    return {ok:false, msg:"Bulut hesabının şifresi güncellenemedi, bu yüzden buradaki şifre de değiştirilmedi. Biraz sonra tekrar dene."};
+  }
+
+  const salt = randomSaltHex();
+  acc.salt = salt;
+  acc.hash = await hashPassword(newPassword, salt);
+  acc.pwPromptSkipped = false;   // artık kısa değil; uyarı ekranı gereksiz
+  pendingSave = true;
+  await persistNow();
+  return {ok:true, created: !!cloud.created};
+}
+
+/* KULLANICI ADI DEĞİŞTİRME (M4)
+   Çevrimdışı açılan bir hesap, bağlanma anında adın bulutta başkasınca
+   alınmış olduğunu öğrenebilir. İlerlemeyi kaybetmeden çıkış yolu: kaydı
+   YENİ anahtara taşı (data nesnesi aynı kalır, dolayısıyla tek bir soru bile
+   kaybolmaz), sonra yeni adla buluta bağlan. */
+async function renameAccount(oldKey, newUsernameRaw){
+  const newKey = (newUsernameRaw||"").trim().toLowerCase();
+  const acc = ACCOUNTS && ACCOUNTS.accounts[oldKey];
+  if(!acc) return {ok:false, msg:"Hesap bulunamadı."};
+  if(!newKey) return {ok:false, msg:"Kullanıcı adı boş olamaz."};
+  if(newKey === oldKey) return {ok:false, msg:"Yeni ad eskisiyle aynı."};
+  if(newKey === "admin") return {ok:false, msg:"Bu kullanıcı adı ayrılmış."};
+  if(!/^[a-z0-9_.]{2,20}$/i.test(newKey)) return {ok:false, msg:"Kullanıcı adı yalnızca harf/rakam/._ içerebilir (2-20 karakter)."};
+  if(ACCOUNTS.accounts[newKey]) return {ok:false, msg:"Bu kullanıcı adı bu cihazda zaten kullanılıyor."};
+
+  ACCOUNTS.accounts[newKey] = acc;
+  delete ACCOUNTS.accounts[oldKey];
+  /* Görünen isim ayrıca seçilmemişse kullanıcı adıyla aynıydı; onu da taşı. */
+  if(acc.displayName === oldKey) acc.displayName = (newUsernameRaw||"").trim();
+  if(currentUser === oldKey){
+    currentUser = newKey;
+    STATE = ACCOUNTS.accounts[newKey].data;   // aynı referans; niyeti açık bırakıyoruz
+    try{ localStorage.setItem('romence_user', newKey); }catch(e){}
+    showAppChrome(true);
+  }
+  pendingSave = true;
+  await persistNow();
+  return {ok:true, key:newKey};
 }
 
 function enterAsUser(key){
@@ -158,6 +261,9 @@ function enterAsUser(key){
 function enterAsGuest(startImmediately){
   isGuest = true;
   currentUser = null;
+  /* Misafirin bulut hesabı olması beklenmiyor: "yedek yok" uyarısı burada
+     yanlış olurdu (tur sonundaki kayıt çağrısı zaten bu işi yapıyor). */
+  if(typeof syncSetStatus === "function") syncSetStatus("off");
   STATE = loadGuestState();
   try{ localStorage.setItem('romence_mode','guest'); localStorage.removeItem('romence_user'); }catch(e){}
   showAppChrome(true);
@@ -232,8 +338,9 @@ function renderAuth(){
     <div class="inputrow" style="flex-direction:column;align-items:stretch">
       <input type="text" id="authUser" autocomplete="username" class="authinput" placeholder="Kullanıcı adı"/>
       ${isLogin? "" : `<input type="text" id="authDisplay" class="authinput" placeholder="Görünecek isim (opsiyonel)"/>`}
-      <input type="password" id="authPass" autocomplete="${isLogin?'current-password':'new-password'}" class="authinput" placeholder="Şifre"/>
+      <input type="password" id="authPass" autocomplete="${isLogin?'current-password':'new-password'}" class="authinput" placeholder="${isLogin? "Şifre" : "Şifre (en az " + SYNC_MIN_PASSWORD + " karakter)"}"/>
     </div>
+    ${isLogin? "" : `<div class="pwnote">&#128273; <b>Şifreni not al.</b> Hesabın gerçek bir e-postaya bağlı olmadığı için şifreni unutursan kurtarma yolu yok — hesabına bir daha giremezsin.</div>`}
     <div class="autherr" id="authErr"></div>
     <button class="btn" id="authSubmitBtn" style="width:100%;margin-top:14px">${isLogin? "Giriş Yap":"Hesap Oluştur"}</button>
     <div class="authswitch">${isLogin
@@ -282,11 +389,33 @@ function renderAuth(){
       pendingSave = true;       // yeni hesap: paylaşılan belgeye kaydedilmeli
       if(isGuest) clearGuestState();   // ilerleme hesaba taşındı, misafir kopyası gereksiz
     }
-    enterAsUser(res.key);
-    /* Bulut senkronu: düz şifreye yalnızca BURADA erişimimiz var (hesap
-       kaydında salt+hash tutuluyor). Arka planda bağlanıyor; başarısız
-       olursa uygulama yerel çalışmaya aynen devam eder. */
-    syncLink(res.key, password).then(r => { if(r.ok) syncNow(); });
+    enterAsUser(res.key);       // içindeki syncResume, varsa oturumu bulup eşitler
+    /* YENİ hesabı hemen diske yaz. switchTab'in 900 ms'lik gecikmeli kaydı
+       burada yetmiyor: kayıt olup uygulamayı hemen kapatan kullanıcı hesabını
+       komple kaybediyordu (aynı sebeple tur sonunda da persistNow kullanılıyor). */
+    if(!isLogin || res.restored) await persistNow();
+    /* Kayıt yolunda bağlantı denemesi registerAccount içinde YAPILDI; kalıcı
+       bir sebeple düştüyse (ad alınmış, e-posta onayı) tekrarlamak boşuna. */
+    if(isLogin && !res.linked){
+      /* Bulut senkronu: düz şifreye yalnızca BURADA erişimimiz var (hesap
+         kaydında salt+hash tutuluyor). Arka planda bağlanıyor; başarısız
+         olursa uygulama yerel çalışmaya aynen devam eder. Kayıt yolunda
+         bağlantı zaten registerAccount içinde kurulduğu için tekrarlamıyoruz. */
+      syncLink(res.key, password).then(r => { if(r.ok) syncNow(); });
+    }
+    /* Kayıt sırasında ad+şifre bulutta zaten varsa kullanıcı aslında kendi
+       hesabına yeni bir cihazdan girmiştir. Sessizce devam etmek, ilerlemenin
+       birden bire "geri gelmesini" açıklanamaz kılardı. */
+    if(!isLogin && res.restored){
+      restoredNotice = true;
+      switchTab('practice');
+    }
+    /* Şifresi kısa olan MEVCUT hesaplar: girişte bir kez uyar (M1). Kayıt
+       yolunda gerekmez, orada alt sınır zaten dayatılıyor. */
+    if(isLogin && password.length < SYNC_MIN_PASSWORD){
+      const acc = ACCOUNTS.accounts[res.key];
+      if(acc && !acc.pwPromptSkipped) renderPasswordStrengthen(res.key, password);
+    }
   }
   document.getElementById('authSubmitBtn').addEventListener('click', submit);
   passInp.addEventListener('keydown', e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); } });
@@ -336,8 +465,13 @@ function renderAdminAuth(){
     submitBtn.disabled = false;
     submitting = false;
     if(!res.ok){ showErr(res.msg); return; }
+    const adminPass = passInp.value;
     enterAsUser(res.key);
-    syncLink(res.key, passInp.value).then(r => { if(r.ok) syncNow(); });
+    syncLink(res.key, adminPass).then(r => { if(r.ok) syncNow(); });
+    if(adminPass.length < SYNC_MIN_PASSWORD){
+      const acc = ACCOUNTS.accounts[res.key];
+      if(acc && !acc.pwPromptSkipped) renderPasswordStrengthen(res.key, adminPass);
+    }
   }
   document.getElementById('adminSubmitBtn').addEventListener('click', submit);
   passInp.addEventListener('keydown', e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); } });

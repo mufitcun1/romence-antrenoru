@@ -131,6 +131,7 @@ function updateGameBar(){
    bu yüzden hata durumu uyarı değil bilgi olarak gösteriliyor. */
 const SYNC_BADGE_TEXT = {
   off:            "",
+  unlinked:       "☁ yedek yok",
   linking:        "☁ bağlanıyor",
   syncing:        "☁ eşitleniyor",
   ok:             "☁ yedeklendi",
@@ -139,16 +140,243 @@ const SYNC_BADGE_TEXT = {
   error:          "☁ yedeklenemedi",
   short_password: "☁ şifre kısa",
 };
+/* Kullanıcının kendi eliyle düzeltebileceği durumlar: rozet tıklanabilir olur
+   ve dokununca çözüm ekranına götürür. Yalnızca "bir şeyler ters" demek,
+   kullanıcıyı çözümsüz bırakmak olurdu. */
+const SYNC_BADGE_ACTIONABLE = ["unlinked", "short_password", "error"];
 function updateSyncBadge(){
   const el = document.getElementById('syncBadge');
   if(!el) return;
   const txt = SYNC_BADGE_TEXT[syncStatus] || "";
   el.textContent = txt;
   el.style.display = txt ? '' : 'none';
-  el.className = 'syncbadge ' + syncStatus;
+  const actionable = SYNC_BADGE_ACTIONABLE.indexOf(syncStatus) !== -1 && !isGuest && !!currentUser;
+  el.className = 'syncbadge ' + syncStatus + (actionable ? ' clickable' : '');
   el.title = syncStatus === 'short_password'
-    ? 'Bulut yedeği için şifren en az 6 karakter olmalı'
-    : (syncStatus === 'ok' ? 'İlerlemen buluta yedeklendi' : 'Bulut yedeği durumu');
+    ? 'Bulut yedeği için şifren en az ' + SYNC_MIN_PASSWORD + ' karakter olmalı — dokun ve değiştir'
+    : syncStatus === 'unlinked'
+      ? 'İlerlemen buluta yedeklenmiyor — dokun ve bağlan'
+      : (syncStatus === 'ok' ? 'İlerlemen buluta yedeklendi' : 'Bulut yedeği durumu');
+}
+
+/* Rozete/karta dokununca açılan tek giriş noktası: duruma göre doğru ekrana
+   yönlendirir (kısa şifrede bağlanmak mümkün değil, önce şifre değişmeli). */
+function openSyncFix(){
+  if(isGuest || !currentUser) return;
+  if(syncStatus === "short_password") renderPasswordChange();
+  else renderSyncConnect();
+}
+
+/* Uyarı kartı oturum içinde kapatılabilir: her ekran çiziminde aynı uyarıyı
+   görmek rahatsız eder ve zamanla görünmez olur. Kalıcı olarak saklamıyoruz —
+   uygulamayı bir daha açtığında yedeği hâlâ yoksa tekrar hatırlatılmalı. */
+let syncNoticeDismissed = false;
+/* "Kayıt oldun ama bu hesap bulutta zaten vardı" bilgisi. Ayrı bir ekran
+   yerine kart: bağlanma bittiğinde syncNow aktif sekmeyi yeniden çizdiği
+   için ayrı ekran silinip gidiyordu — kart bu akışla çakışmıyor. */
+let restoredNotice = false;
+function restoredNoticeHTML(){
+  if(!restoredNotice) return "";
+  return `<div class="card synccard" id="restoredNotice">
+    <button type="button" class="synccardx" id="restoredNoticeX" aria-label="Kapat">&#10005;</button>
+    <div class="pill">&#128274; Hesabın bulundu</div>
+    <div class="qtext">Bu hesap bulutta zaten vardı</div>
+    <p>Aynı kullanıcı adı ve şifreyle daha önce açtığın hesaba girdin — önceki ilerlemen geri yüklendi.</p>
+  </div>`;
+}
+function syncNoticeHTML(){
+  if(isGuest || !currentUser) return "";
+  if(syncNoticeDismissed) return "";
+  if(syncStatus !== "unlinked" && syncStatus !== "short_password") return "";
+  const kisa = syncStatus === "short_password";
+  return `<div class="card synccard" id="syncNotice">
+    <button type="button" class="synccardx" id="syncNoticeX" aria-label="Kapat">&#10005;</button>
+    <div class="pill">&#9729;&#65039; Yedek yok</div>
+    <div class="qtext">İlerlemen yalnızca bu cihazda</div>
+    <p>${kisa
+      ? `Şifren bulut yedeği için çok kısa (en az ${SYNC_MIN_PASSWORD} karakter gerekiyor). Şifreni uzatırsan serin, XP'in ve ustalık kayıtların telefonunu değiştirsen bile durur.`
+      : "Telefonunu değiştirirsen ya da uygulamayı silersen ilerlemen kaybolur. Şifreni bir kez yaz, gerisini biz hallederiz."}</p>
+    <button class="btn" id="syncNoticeBtn" style="width:100%;margin-top:12px">${kisa ? "Şifremi Değiştir" : "Buluta Bağlan"}</button>
+  </div>`;
+}
+function bindSyncNotice(){
+  const x = document.getElementById('syncNoticeX');
+  if(x) x.addEventListener('click', ()=>{ syncNoticeDismissed = true; const c = document.getElementById('syncNotice'); if(c) c.remove(); });
+  const b = document.getElementById('syncNoticeBtn');
+  if(b) b.addEventListener('click', openSyncFix);
+  const rx = document.getElementById('restoredNoticeX');
+  if(rx) rx.addEventListener('click', ()=>{ restoredNotice = false; const c = document.getElementById('restoredNotice'); if(c) c.remove(); });
+}
+
+/* BULUTA BAĞLAN — hesabın var ama bu cihazda bulut oturumu yok.
+   Şifre yalnızca burada, kullanıcının kendi yazdığı anda elimizde olur
+   (hesap kaydında salt+hash tutuluyor); bu yüzden bağlanmanın tek yolu
+   bu ekran. */
+function renderSyncConnect(){
+  if(isGuest || !currentUser) return;
+  showAppChrome(true);
+  root().innerHTML = `<div class="card">
+    <div class="pill">Bulut Yedeği</div>
+    <div class="qtext">Şifreni yaz, ilerlemeni yedekleyelim</div>
+    <p style="color:var(--ink-dim);font-size:.88rem;line-height:1.55;margin:6px 0 14px">Bu hesabın (<b>${currentUser}</b>) bu cihazda buluta bağlı değil. Şifreni bir kez yazman yeterli — sonrasında her tur arka planda kendiliğinden yedeklenir.</p>
+    <input type="password" id="syncPass" class="authinput" placeholder="Şifren" autocomplete="current-password"/>
+    <div class="autherr" id="syncErr"></div>
+    <div id="syncRenameBox" style="display:none;margin-top:12px">
+      <input type="text" id="syncNewName" class="authinput" placeholder="Yeni kullanıcı adı"/>
+      <button class="btn" id="syncRenameBtn" style="width:100%;margin-top:8px">Adı Değiştir ve Bağlan</button>
+    </div>
+    <div id="syncOk" style="display:none;margin-top:10px;color:var(--good);font-size:.88rem"></div>
+    <button class="btn" id="syncConnectBtn" style="width:100%;margin-top:12px">Buluta Bağlan</button>
+    <div class="authswitch" style="margin-top:12px"><a id="syncBackLink">&#8592; Geri</a></div>
+  </div>`;
+  const passInp = document.getElementById('syncPass');
+  const errEl   = document.getElementById('syncErr');
+  const okEl    = document.getElementById('syncOk');
+  const btn     = document.getElementById('syncConnectBtn');
+  function showErr(msg){ errEl.innerHTML = msg; errEl.style.display = 'block'; okEl.style.display = 'none'; }
+  let busy = false;
+  async function connect(){
+    if(busy) return;
+    busy = true; btn.disabled = true; errEl.style.display = 'none';
+    const pass = passInp.value;
+    /* Önce YEREL doğrulama: buluttan gelen "signup_failed" hem "şifren
+       yanlış" hem "bu adı başkası almış" anlamına gelebiliyor. Yerel kontrol
+       ikisini kesin olarak ayırır. */
+    const local = await loginAccount(currentUser, pass);
+    if(!local.ok){
+      busy = false; btn.disabled = false;
+      showErr("Şifre yanlış.");
+      return;
+    }
+    if(pass.length < SYNC_MIN_PASSWORD){
+      busy = false; btn.disabled = false;
+      showErr(`Şifren bulut yedeği için çok kısa (en az ${SYNC_MIN_PASSWORD} karakter). <a id="syncToChange">Şifreni değiştir</a>`);
+      const lnk = document.getElementById('syncToChange');
+      if(lnk) lnk.addEventListener('click', ()=> renderPasswordChange(pass));
+      return;
+    }
+    const res = await syncLink(currentUser, pass);
+    busy = false; btn.disabled = false;
+    if(res.ok){
+      okEl.textContent = "Bağlandı — ilerlemen yedekleniyor.";
+      okEl.style.display = 'block';
+      await syncNow();
+      setTimeout(()=> switchTab('practice'), 900);
+      return;
+    }
+    if(res.reason === "offline")      return showErr("İnternet bağlantısı yok gibi görünüyor. Bağlandığında tekrar dene.");
+    if(res.reason === "unavailable")  return showErr("Sunucuya şu an ulaşılamıyor. Biraz sonra tekrar dene — ilerlemen bu cihazda duruyor.");
+    if(res.reason === "signup_failed"){
+      /* Şifre yerelde DOĞRULANDI (yukarıda), yani bu bir "şifren yanlış"
+         değil: kullanıcı adı bulutta başkasına ait. Çevrimdışıyken açılan
+         hesaplarda olabilen durum — çıkış yolu ad değiştirmek (M4). */
+      showErr("Bu kullanıcı adı bulutta başka birine ait. Bağlanmak için farklı bir ad seç — ilerlemenin tamamı yeni adına taşınır.");
+      renameBox.style.display = 'block';
+      nameInp.focus();
+      return;
+    }
+    showErr("Buluta bağlanılamadı. Biraz sonra tekrar dene.");
+  }
+  const renameBox = document.getElementById('syncRenameBox');
+  const nameInp   = document.getElementById('syncNewName');
+  const renameBtn = document.getElementById('syncRenameBtn');
+  async function doRename(){
+    if(busy) return;
+    busy = true; renameBtn.disabled = true;
+    const pass = passInp.value;
+    const eski = currentUser;
+    const yeni = nameInp.value;
+    /* Önce bulutta boş mu diye bak: adı yerelde değiştirip sonra çakışmayı
+       öğrenmek kullanıcıyı ikinci bir çıkmaza sokardı. */
+    const probe = await syncLink(yeni.trim().toLowerCase(), pass);
+    if(!probe.ok){
+      busy = false; renameBtn.disabled = false;
+      if(probe.reason === "signup_failed") return showErr("Bu ad da alınmış — başka bir tane dene.");
+      if(probe.reason === "offline")       return showErr("İnternet bağlantısı yok gibi görünüyor.");
+      return showErr("Sunucuya ulaşılamadı. Biraz sonra tekrar dene.");
+    }
+    const renamed = await renameAccount(eski, yeni);
+    busy = false; renameBtn.disabled = false;
+    if(!renamed.ok){ showErr(renamed.msg); return; }
+    okEl.textContent = "Adın " + renamed.key + " oldu ve ilerlemen buluta bağlandı.";
+    okEl.style.display = 'block';
+    errEl.style.display = 'none';
+    renameBox.style.display = 'none';
+    await syncNow();
+    setTimeout(()=> switchTab('practice'), 1200);
+  }
+  renameBtn.addEventListener('click', doRename);
+  nameInp.addEventListener('keydown', e=>{ if(e.key==="Enter"){ e.preventDefault(); doRename(); } });
+  btn.addEventListener('click', connect);
+  passInp.addEventListener('keydown', e=>{ if(e.key==="Enter"){ e.preventDefault(); connect(); } });
+  document.getElementById('syncBackLink').addEventListener('click', ()=> switchTab(activeTab));
+  passInp.focus();
+}
+
+/* ŞİFRE DEĞİŞTİRME EKRANI (M1)
+   prefillOld: girişten hemen sonra "şifreni güçlendir" akışıyla gelindiyse
+   eski şifre elimizde olur; kullanıcıya yeniden yazdırmıyoruz. */
+function renderPasswordChange(prefillOld){
+  if(isGuest || !currentUser) return;
+  showAppChrome(true);
+  const acc = ACCOUNTS.accounts[currentUser];
+  const eskiVar = !!(acc && acc.hash);
+  root().innerHTML = `<div class="card">
+    <div class="pill">Şifre Değiştir</div>
+    <div class="qtext">Yeni şifren en az ${SYNC_MIN_PASSWORD} karakter olmalı</div>
+    <p style="color:var(--ink-dim);font-size:.86rem;line-height:1.55;margin:6px 0 14px">Bulut yedeği ${SYNC_MIN_PASSWORD} karakterden kısa şifreleri kabul etmiyor. Şifren uzadığında ilerlemen otomatik olarak yedeklenmeye başlar.</p>
+    ${eskiVar ? `<input type="password" id="pwOld" class="authinput" placeholder="Mevcut şifren" autocomplete="current-password" value="${prefillOld ? String(prefillOld).replace(/"/g,'&quot;') : ''}"/>` : ""}
+    <input type="password" id="pwNew"  class="authinput" placeholder="Yeni şifre" autocomplete="new-password"/>
+    <input type="password" id="pwNew2" class="authinput" placeholder="Yeni şifre (tekrar)" autocomplete="new-password"/>
+    <div class="autherr" id="pwErr"></div>
+    <div id="pwOk" style="display:none;margin-top:10px;color:var(--good);font-size:.88rem"></div>
+    <button class="btn" id="pwSaveBtn" style="width:100%;margin-top:12px">Şifreyi Değiştir</button>
+    <div class="authswitch" style="margin-top:12px"><a id="pwBackLink">&#8592; Geri</a></div>
+  </div>`;
+  const oldInp = document.getElementById('pwOld');
+  const n1 = document.getElementById('pwNew'), n2 = document.getElementById('pwNew2');
+  const errEl = document.getElementById('pwErr'), okEl = document.getElementById('pwOk');
+  const btn = document.getElementById('pwSaveBtn');
+  function showErr(m){ errEl.textContent = m; errEl.style.display = 'block'; okEl.style.display='none'; }
+  let busy = false;
+  async function save(){
+    if(busy) return;
+    if(n1.value !== n2.value) return showErr("İki yeni şifre birbirini tutmuyor.");
+    busy = true; btn.disabled = true; errEl.style.display = 'none';
+    const res = await changePassword(currentUser, oldInp ? oldInp.value : "", n1.value);
+    busy = false; btn.disabled = false;
+    if(!res.ok){ showErr(res.msg); return; }
+    okEl.textContent = "Şifren değişti ve ilerlemen buluta yedeklendi.";
+    okEl.style.display = 'block';
+    await syncNow();
+    setTimeout(()=> switchTab('practice'), 1200);
+  }
+  btn.addEventListener('click', save);
+  n2.addEventListener('keydown', e=>{ if(e.key==="Enter"){ e.preventDefault(); save(); } });
+  document.getElementById('pwBackLink').addEventListener('click', ()=> switchTab(activeTab));
+  (n1 || document.body).focus();
+}
+
+/* GİRİŞTE ŞİFRE GÜÇLENDİRME (M1)
+   Yalnızca şifresi kısa olan mevcut hesaplar için, hesap başına BİR KEZ.
+   ATLANABİLİR olması bilinçli: aile üyesini uygulamanın dışında bırakmak,
+   yedeksiz kalmasından daha kötü. Atlansa bile üst bardaki uyarı kalır. */
+function renderPasswordStrengthen(key, password){
+  showAppChrome(true);
+  root().innerHTML = `<div class="card">
+    <div class="mascotwrap">${mascotSVG("neutral",76)}</div>
+    <div class="pill">&#9729;&#65039; İlerlemen yedeklenmiyor</div>
+    <div class="qtext">Şifren bulut yedeği için çok kısa</div>
+    <p style="color:var(--ink-dim);font-size:.88rem;line-height:1.55;margin:8px 0 0">Şifreni en az ${SYNC_MIN_PASSWORD} karaktere çıkarırsan serin, XP'in ve ustalık kayıtların buluta yedeklenir; telefonunu değiştirsen bile kaldığın yerden devam edersin. Şimdi yapmak zorunda değilsin.</p>
+    <button class="btn" id="pwStrongBtn" style="width:100%;margin-top:16px">Şifremi Şimdi Değiştir</button>
+    <button class="btn secondary" id="pwLaterBtn" style="width:100%;margin-top:8px">Şimdi Değil</button>
+  </div>`;
+  document.getElementById('pwStrongBtn').addEventListener('click', ()=> renderPasswordChange(password));
+  document.getElementById('pwLaterBtn').addEventListener('click', ()=>{
+    const acc = ACCOUNTS.accounts[key];
+    if(acc){ acc.pwPromptSkipped = true; pendingSave = true; persist(); }
+    switchTab('practice');
+  });
 }
 
 function resetSessionRewards(){
@@ -745,7 +973,7 @@ function renderPracticeHome(){
     <div class="qtext">${STATE.streak.current} günlük serin bugün bitiyor</div>
     <p>Bugün ${xpRemainingToday()} XP daha kazanırsan serin devam eder — bir tur yeter.</p>
   </div>` : "";
-  root().innerHTML = riskCard + `<div class="card">
+  root().innerHTML = restoredNoticeHTML() + syncNoticeHTML() + riskCard + `<div class="card">
     <div class="pill">${L.ad} Pratik</div>
     <p style="color:var(--ink-dim);font-size:.9rem;line-height:1.5">Ne çalışmak istersin?</p>
     <div class="filterrow" id="filterRow">
@@ -759,6 +987,7 @@ function renderPracticeHome(){
     btn.addEventListener('click', ()=>{ practiceFilter = btn.getAttribute('data-key'); renderPracticeHome(); });
   });
   document.getElementById('startBtn').addEventListener('click', startPractice);
+  bindSyncNotice();
 }
 
 function startTest(){
@@ -853,6 +1082,23 @@ function renderDashboard(){
     <div class="row"><span>Tamamlanan tur/sınav</span><span>${STATE.sessionsCompleted||0}</span></div>
     <div class="row" style="margin-top:8px"><span>Deneme sınavı sayısı</span><span>${seviyeSinavlari(currentLevel).length}</span></div>
   </div>
+  ${(!isGuest && currentUser) ? `<div class="card" id="accountCard">
+    <h2 style="margin-top:0">Hesap ve Bulut Yedeği</h2>
+    <div class="row"><span>Kullanıcı adı</span><span>${currentUser}</span></div>
+    <div class="row" style="margin-top:8px"><span>Bulut yedeği</span><span>${
+      syncStatus === "ok" ? "&#10003; yedeklendi"
+      : syncStatus === "syncing" ? "eşitleniyor…"
+      : syncStatus === "linking" ? "bağlanıyor…"
+      : syncStatus === "offline" ? "çevrimdışı"
+      : syncStatus === "unavailable" ? "sunucuya ulaşılamıyor"
+      : syncStatus === "short_password" ? "kapalı — şifre kısa"
+      : syncStatus === "unlinked" ? "kapalı — bağlı değil"
+      : "kapalı"}</span></div>
+    <p style="color:var(--ink-dim);font-size:.8rem;margin:12px 0 10px;line-height:1.5">Şifren bu cihazda saklanmıyor; yalnızca doğrulama izi tutuluyor. Unutursan kurtarma yolu yok — bu yüzden not almanı öneririz.</p>
+    <button class="btn secondary" id="pwChangeBtn" style="width:100%">Şifremi Değiştir</button>
+    ${(syncStatus === "unlinked" || syncStatus === "error")
+      ? `<button class="btn" id="syncConnectFromDash" style="width:100%;margin-top:8px">Buluta Bağlan</button>` : ""}
+  </div>` : ""}
   ${currentUser==='admin' ? `<div class="card" id="adminToolsCard">
     <h2 style="margin-top:0">Yönetici Araçları</h2>
     <p style="color:var(--ink-dim);font-size:.82rem;margin:0 0 10px">Uygulama güncellenmeden önce tüm ailenin ilerlemesini buradan yedekle; bir güncellemeden sonra gerekirse aynı yerden geri yükle.</p>
@@ -866,6 +1112,11 @@ function renderDashboard(){
     <div class="autherr" id="backupErr" style="display:none;margin-top:8px"></div>
     <div id="backupOk" style="display:none;margin-top:8px;color:var(--good);font-size:.85rem"></div>
   </div>` : ""}`;
+  const pwBtn = document.getElementById('pwChangeBtn');
+  if(pwBtn) pwBtn.addEventListener('click', ()=> renderPasswordChange());
+  const connBtn = document.getElementById('syncConnectFromDash');
+  if(connBtn) connBtn.addEventListener('click', renderSyncConnect);
+
   document.querySelectorAll('#goalRow .filterchip').forEach(btn=>{
     btn.addEventListener('click', ()=>{
       STATE.dailyGoal = +btn.getAttribute('data-goal');
@@ -1011,6 +1262,9 @@ document.querySelectorAll('.levelchip').forEach(c=> c.addEventListener('click', 
    (etiketi showAppChrome ayarlıyor). */
 document.getElementById('logoutBtn').addEventListener('click', ()=>{
   if(isGuest) startGuestSignup(); else logoutUser();
+});
+document.getElementById('syncBadge').addEventListener('click', ()=>{
+  if(SYNC_BADGE_ACTIONABLE.indexOf(syncStatus) !== -1) openSyncFix();
 });
 
 /* Bu cihazda daha önce giriş yapılmışsa (localStorage'da hatırlanan kullanıcı
