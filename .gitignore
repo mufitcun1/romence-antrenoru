@@ -1,1 +1,11 @@
 node_modules/
+
+# Sohbet sırasında üretilen ekran görüntüleri/önizlemeler buraya düşüyor.
+# Uygulamanın parçası değiller ve depo herkese açık olduğu için (GitHub Pages
+# bu klasörü de yayınlar) sürüm geçmişine girmemeleri gerekiyor.
+Claude outputs/
+
+# Yerel deneme/aktarım artıkları
+*.patch
+*.bundle
+_to_delete/
