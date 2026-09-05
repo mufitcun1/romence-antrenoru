@@ -384,6 +384,11 @@ function markResult(correct, note, noRetry){
       const item = sessionQueue[sessionIdx];
       if(item) sessionQueue.push(Object.assign({}, item, {_retry:true}));
     }
+
+    /* Soru başına kaydet (900 ms debounce). Artifact platformundan çıkıldığı
+       için kaydetmek artık sayfayı yeniden yüklemiyor; ertelemenin tek etkisi
+       tur ortasında kapatan kullanıcının ilerlemesini kaybetmesiydi. */
+    persist();
   }
   if(fb){
     fb.classList.remove('good','bad');
@@ -484,6 +489,7 @@ function renderSessionDone(){
   if(wasTest){
     STATE.testHistory.push({date:new Date().toISOString().slice(0,10), score:sessionScore.correct, total:sessionScore.total,
       byCategory: summarizeByCat(testResults)});
+    persistNow();   // sınav sonucu ve ödülleri hemen kalıcı olsun
     renderTestResult(pct);
     testMode=false; testResults=[];
     return;
@@ -499,6 +505,7 @@ function renderSessionDone(){
       <button class="btn" id="againBtn" style="flex:1">Yeni Tur Başlat</button>
     </div>
   </div>`;
+  persistNow();   // tur ödülleri ekranda görünür görünmez diske yazılsın
   document.getElementById('againBtn').addEventListener('click', startPractice);
   document.getElementById('homeBtn').addEventListener('click', goHome);
 }

@@ -25,6 +25,11 @@ const XP_SESSION_END  = 5;   // pratik turunu bitirme
 const XP_PERFECT      = 5;   // kusursuz tur bonusu
 const XP_TEST_END     = 15;  // deneme sınavını bitirme
 const XP_FIRST_TODAY  = 5;   // günün ilk turu
+const XP_COMBO        = 2;   // her COMBO_STEP'lik ardışık doğru serisi
+
+/* --- Tur içi combo (ardışık doğru) --- */
+const COMBO_SHOW = 3;        // rozet bu sayıdan itibaren görünür
+const COMBO_STEP = 5;        // her bu katta ek XP
 
 /* --- Günlük hedef seçenekleri --- */
 const DAILY_GOALS = [

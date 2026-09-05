@@ -241,11 +241,13 @@ function recordAnswer(id, correct){
   } else {
     e.streak=0; e.box=Math.max(0,e.box-1);
   }
-  /* NOT: burada persist() ÇAĞRILMAZ — artifact.publish() yayınlayan görünüm
-     dahil tüm açık sekmeleri yeniden yükler. Soru başına kaydetmek, oturum
-     ortasında sayfayı sıfırlardı. Kayıt sadece kullanıcı ana ekrana dönünce
-     veya sekme değiştirince yapılır (bkz. goHomeAndSave / switchTab), böylece
-     sonuç ekranı veya yeni bir tur asla elinden alınmaz. */
+  /* Eskiden burada persist() çağrılmazdı: Artifact platformunda kaydetmek
+     (artifact.publish()) tüm açık sekmeleri yeniden yüklüyordu, bu yüzden
+     kayıt ana ekrana dönene kadar ertelenirdi. O platformdan çıkıldı; kayıt
+     artık localStorage'a yazıyor ve hiçbir şeyi yeniden yüklemiyor. Erteleme
+     sürdüğü sürece tur sonu ekranında uygulamayı kapatan kullanıcı turun
+     tamamını kaybediyordu — çağrı ui.js:markResult içinde geri kondu
+     (900 ms'lik debounce persist() içinde). */
   pendingSave = true;
 }
 function weightFor(id){
@@ -271,6 +273,12 @@ function persist(){
   clearTimeout(saveTimer);
   saveTimer = setTimeout(doPublish, 900);
 }
+/* Beklemeden kaydet — kullanıcının uygulamayı kapatabileceği anlarda
+   (tur/sınav sonucu ekranı, ana ekrana dönüş) kullanılır. */
+function persistNow(){
+  clearTimeout(saveTimer);
+  return doPublish();
+}
 async function doPublish(){
   /* STATE, o an giriş yapmış kullanıcının veri dilimidir (zaten aynı referans
      olduğu için bu satır çoğunlukla no-op'tur, ama güvenlik ağı olarak
@@ -286,9 +294,6 @@ async function doPublish(){
 }
 /* Sonuç ekranından ana ekrana dönerken: varsa bekleyen ilerlemeyi hemen kaydet. */
 function goHome(){
-  if(pendingSave){
-    clearTimeout(saveTimer);
-    doPublish();
-  }
+  if(pendingSave) persistNow();
   switchTab('practice');
 }
