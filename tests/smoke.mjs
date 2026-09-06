@@ -302,7 +302,20 @@ try {
       edat: exerciseForGrammarB1("edat").kind,
       fiil: exerciseForVerbB1(VERBS_B1[0]).kind,
       kelimeYeni: exerciseForVocabB1(VOCAB_B1[0]).kind,
-      klitikStrict: exerciseForGrammarB1("klitik").strictHyphen === true,
+      /* strictHyphen artık maddeye bağlı: 22 klitik cümlesinin 5'inde kısa
+         çizgi yok ("Filmul acela __ văzusem" → îl) ve orada iç tire denetimi
+         anlamsız. Tek örneğe bakmak bu yüzden kararsız; havuzun tamamında
+         tire varlığı ile bayrağın örtüştüğünü doğruluyoruz. */
+      klitikStrict: (()=>{
+        let tireli = 0, tiresiz = 0, tutarli = true;
+        for(let i=0;i<200;i++){
+          const q = exerciseForGrammarB1("klitik");
+          const t = /-______|______-/.test(q.prompt);
+          if(t) tireli++; else tiresiz++;
+          if(!!q.strictHyphen !== t) tutarli = false;
+        }
+        return tutarli && tireli > 0 && tiresiz > 0;
+      })(),
       klitikCumleGosteriyor: (()=>{ const q=exerciseForGrammarB1("klitik");
         return !!q.roDisplay && q.roDisplay !== q.answer; })(),
       cumleNoktalamasiz: (()=>{ const q=exerciseForSentenceB1({ro:"Am venit acasă.",tr:"Eve geldim.",id:"x"});
@@ -317,7 +330,7 @@ try {
   kontrol("Edat kalıbı ve yeni kelime çoktan seçmeli kalıyor",
     tasarim.edat==="mc" && tasarim.kelimeYeni==="mc", `edat=${tasarim.edat} kelime=${tasarim.kelimeYeni}`);
   kontrol("Fiil çekimi daima yazdırılıyor", tasarim.fiil==="type", tasarim.fiil);
-  kontrol("Klitik sorusu kısa çizgiye duyarlı işaretli", tasarim.klitikStrict);
+  kontrol("Kısa çizgi denetimi yalnızca tireli klitik maddelerinde açık", tasarim.klitikStrict);
   kontrol("Klitik/gendat/türetme cevabı düzeltilmiş CÜMLEYİ gösteriyor", tasarim.klitikCumleGosteriyor);
   kontrol("Cümle dizmede noktalama kırpılıyor (son kelimeyi ele vermesin)", tasarim.cumleNoktalamasiz);
 
@@ -907,13 +920,23 @@ try {
   kontrol("Condițional-optativ ilk turdan itibaren soruluyor",
     kipler.cond > 30 && kipler.imp > 30, JSON.stringify(kipler));
 
+  /* Kip artık rastgele seçildiği için tek örnek yeterli değil: iki kipten de
+     örnek toplayıp ikisinde de rozetin çekim sınıfını sızdırmadığına bakıyoruz. */
   const fiilIpucu = await page.evaluate(()=>{
-    const q = exerciseForVerbB1(VERBS_B1.find(v=> /^IV/.test(v[4])));
-    return {hint:q.hint, aciklama:q.aciklama, prompt:q.prompt};
+    const v = VERBS_B1.find(x=> /^IV/.test(x[4]));
+    let imp = null, cond = null;
+    for(let i=0;i<400 && (!imp || !cond);i++){
+      const q = exerciseForVerbB1(v);
+      if(/condițional/i.test(q.prompt)) cond = cond || q; else imp = imp || q;
+    }
+    return {impHint:imp&&imp.hint, impAciklama:imp&&imp.aciklama,
+            condHint:cond&&cond.hint, condAciklama:cond&&cond.aciklama};
   });
   kontrol("Çekim sınıfı soruda değil, cevaptan sonra",
-    !/\(-/.test(fiilIpucu.hint) && /grubu/.test(fiilIpucu.aciklama||""),
-    `${fiilIpucu.hint} → ${fiilIpucu.aciklama}`);
+    !!fiilIpucu.impHint && !!fiilIpucu.condHint
+      && !/\(-/.test(fiilIpucu.impHint) && !/\(-/.test(fiilIpucu.condHint)
+      && /grubu/.test(fiilIpucu.impAciklama||""),
+    `${fiilIpucu.impHint} → ${fiilIpucu.impAciklama} · ${fiilIpucu.condHint}`);
 
   /* 9.9 Kök paylaşan zıt anlam maddesi çoktan seçmeli değil (bedava cevap). */
   const zit = await page.evaluate(()=>{
@@ -959,6 +982,31 @@ try {
   kontrol("İlk denemedeki yanlış combo'yu kırıyor",
     combo.ikinciDeneme === 0 && combo.ilkDeneme === 5, JSON.stringify(combo));
 
+  /* 9.12b Kelime havuzlarında çift kayıt yok.
+     "apartament" hem kişisel bilgi hem konut temasında duruyordu: aynı kelime
+     iki ayrı Leitner kutusuna giriyor, havuz sayısını şişiriyor ve öğrenciye
+     aynı şeyi iki kez ezberletiyordu. */
+  const cift = await page.evaluate(()=>{
+    const say = (liste, roIdx, trIdx) => {
+      const ro = {}, tr = {};
+      liste.forEach(r=>{ ro[r[roIdx]] = (ro[r[roIdx]]||0)+1; tr[r[trIdx]] = (tr[r[trIdx]]||0)+1; });
+      return {
+        ro: Object.keys(ro).filter(k=> ro[k] > 1),
+        tr: Object.keys(tr).filter(k=> tr[k] > 1)
+      };
+    };
+    return {
+      a1: say(VOCAB, 2, 3),
+      b1: say(VOCAB_B1, 2, 3),
+      a1Adet: VOCAB.length
+    };
+  });
+  kontrol("A1 kelime havuzunda çift kayıt yok",
+    cift.a1.ro.length === 0 && cift.a1.tr.length === 0,
+    `ro: ${cift.a1.ro.join(",") || "yok"} · tr: ${cift.a1.tr.join(",") || "yok"} · ${cift.a1Adet} kelime`);
+  kontrol("B1 kelime havuzunda çift Romence kayıt yok",
+    cift.b1.ro.length === 0, cift.b1.ro.join(",") || "yok");
+
   /* 9.13 Çok karşılıklı Türkçe gloss'ta kısmi cevap kabul ediliyor (B1). */
   const b1Gloss = await page.evaluate(()=>{
     const v = VOCAB_B1.find(x=> x[3].includes("/"));
@@ -999,6 +1047,62 @@ try {
   kontrol("Onaylayınca turdan çıkılıyor", await page.locator(".statgrid").count() === 1);
   await page.evaluate(()=> selectLevel("A2"));
   await page.locator('.tab[data-tab="practice"]').click();
+
+  /* ---------- 10. Uygulama içi hesap silme (Play Store şartı) ---------- */
+  console.log("\n10) Hesap silme");
+  await page.evaluate(()=> selectLevel("A2"));
+  await page.locator('.tab[data-tab="dash"]').click();
+  await page.waitForSelector(".statgrid");
+  kontrol("İlerleme ekranında 'Hesabımı Sil' düğmesi var",
+    await page.locator("#deleteAccountBtn").count() === 1);
+
+  await page.locator("#deleteAccountBtn").click();
+  await page.waitForSelector("#delConfirmBtn", {timeout: 5000});
+  kontrol("Onay düğmesi kullanıcı adı yazılmadan kapalı",
+    await page.locator("#delConfirmBtn").isDisabled());
+  await page.locator("#delConfirmInput").fill("yanlisad");
+  kontrol("Yanlış kullanıcı adı onayı açmıyor",
+    await page.locator("#delConfirmBtn").isDisabled());
+  await page.locator("#delConfirmInput").fill("testkullanici");
+  kontrol("Doğru kullanıcı adı onayı açıyor",
+    !(await page.locator("#delConfirmBtn").isDisabled()));
+
+  /* Sunucu tarafı henüz uygulanmadığında YEREL kayıt silinmemeli: yarım silme
+     kullanıcıya erişemediği ama var olan bir hesap bırakır. */
+  await page.evaluate(()=>{ window.__gercekSil = syncDeleteAccount;
+                            syncDeleteAccount = async ()=> ({ok:false, reason:"not_deployed"}); });
+  await page.locator("#delConfirmBtn").click();
+  await page.waitForTimeout(800);
+  const yarimSilme = await page.evaluate(()=> ({
+    hesapDuruyor: !!(ACCOUNTS && ACCOUNTS.accounts && ACCOUNTS.accounts["testkullanici"]),
+    girisAcik: currentUser === "testkullanici",
+    hata: (document.getElementById("delErr")||{}).textContent || ""
+  }));
+  kontrol("Bulut silinemezse yerel hesap da silinmiyor",
+    yarimSilme.hesapDuruyor && yarimSilme.girisAcik, JSON.stringify(yarimSilme));
+  kontrol("Kullanıcıya dürüst bir mesaj gösteriliyor",
+    /henüz açık değil|destek/i.test(yarimSilme.hata), yarimSilme.hata.slice(0,80));
+
+  /* Sunucu tarafı çalıştığında hesap gerçekten gidiyor. */
+  await page.evaluate(()=>{ syncDeleteAccount = async ()=> ({ok:true}); });
+  await page.locator("#delConfirmBtn").click();
+  await page.waitForTimeout(1200);
+  const silindi = await page.evaluate(()=> ({
+    hesapGitti: !(ACCOUNTS && ACCOUNTS.accounts && ACCOUNTS.accounts["testkullanici"]),
+    cikisYapildi: currentUser === null,
+    depodaYok: !((localStorage.getItem("romence_accounts_v2")||"").includes("testkullanici"))
+  }));
+  kontrol("Onaylanınca hesap cihazdan da siliniyor ve çıkış yapılıyor",
+    silindi.hesapGitti && silindi.cikisYapildi && silindi.depodaYok, JSON.stringify(silindi));
+
+  /* Migration dosyası depoda duruyor mu (kullanıcı uygulayacak). */
+  const migration = await fetch(`http://localhost:${PORT}/supabase/migrations/20260906_delete_own_account.sql`)
+    .then(r=> r.ok ? r.text() : "").catch(()=> "");
+  kontrol("Sunucu tarafı SQL'i depoda ve auth.uid() ile sınırlı",
+    /delete_own_account/.test(migration) && /auth\.uid\(\)/.test(migration)
+      && /security definer/i.test(migration) && /set search_path = ''/.test(migration)
+      && !/create or replace function public\.delete_own_account\s*\(\s*[a-z]/i.test(migration),
+    migration ? `${migration.length} karakter` : "dosya yok");
 
   /* ---------- 8. Konsol ---------- */
   console.log("\n8) Konsol");

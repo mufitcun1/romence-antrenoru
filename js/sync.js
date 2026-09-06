@@ -321,6 +321,30 @@ async function syncPush(data){
   return {ok:true};
 }
 
+/* HESAP SİLME (Play Store şartı)
+   İstemci kendi auth kaydını silemez, o yüzden iş sunucudaki
+   delete_own_account() fonksiyonuna devrediliyor: ilerleme satırını ve auth
+   kaydını birlikte siliyor, hangi hesabın silineceğini parametre olarak DEĞİL
+   auth.uid()'den okuyor (bkz. supabase/migrations/20260906_delete_own_account.sql).
+   Fonksiyon henüz uygulanmadıysa 404 döner; çağıran taraf bunu kullanıcıya
+   dürüstçe söylüyor ve yerel kaydı SİLMİYOR — yoksa cihazdan silinmiş ama
+   bulutta duran bir hesap kalırdı. */
+async function syncDeleteAccount(){
+  const token = await syncEnsureToken();
+  if(!token) return {ok:false, reason:"no_session"};
+  const res = await syncFetch("/rest/v1/rpc/delete_own_account", {
+    method: "POST", token, body: {},
+  });
+  if(!res.ok){
+    /* 404: fonksiyon sunucuda yok (migration uygulanmamış). */
+    if(res.status === 404) return {ok:false, reason:"not_deployed"};
+    return {ok:false, reason: res.offline ? "offline" : (res.temporary ? "unavailable" : "http_" + res.status)};
+  }
+  syncClearSession();
+  syncSetStatus("off");
+  return {ok:true};
+}
+
 /* ============================= BİRLEŞTİRME =============================
    İki cihaz aynı hesapla çalışabildiği için kör "son yazan kazanır" bir turu
    yok edebilir. Alan bazında, KAYIP OLMAYAN yönde birleştiriyoruz. */

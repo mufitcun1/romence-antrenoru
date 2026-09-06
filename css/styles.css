@@ -143,6 +143,10 @@ input[type=text]:focus{outline:none;border-color:var(--accent)}
 button{font:inherit;cursor:pointer}
 .btn{border:none;border-radius:10px;padding:12px 18px;font-weight:700;font-size:.9rem;background:var(--accent);color:var(--accent-ink);transition:transform .1s ease,filter .15s ease}
 .btn.secondary{background:var(--chip);color:var(--ink)}
+/* Geri alınamayan işlem (hesap silme): kırmızı ama çerçeveli — birincil
+   eylem gibi görünüp yanlışlıkla tıklanmasın diye dolgusuz. */
+.btn.danger{background:transparent;color:var(--bad);border:1px solid var(--bad)}
+.btn.danger:disabled{opacity:.45}
 .btn:active:not(:disabled){transform:scale(.96)}
 .btn:hover:not(:disabled){filter:brightness(1.05)}
 .btn:disabled{opacity:.5;cursor:default}

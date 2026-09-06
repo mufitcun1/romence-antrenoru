@@ -1234,6 +1234,62 @@ function renderTestHome(){
   document.getElementById('startTestBtn').addEventListener('click', startTest);
 }
 
+/* HESAP SİLME AKIŞI (Play Store şartı)
+   Geri alınamayan bir işlem, o yüzden tek tıkla değil: kullanıcı adını
+   yazarak onaylatıyoruz. Sıra önemli — önce bulut, sonra cihaz: tersi olsaydı
+   akış yarıda kalınca hesap cihazdan silinmiş ama bulutta durur hâlde
+   kalırdı ve kullanıcı bunu bir daha göremezdi. */
+function renderAccountDelete(){
+  const kullanici = currentUser;
+  root().innerHTML = `<div class="card">
+    <div class="pill">Hesabımı Sil</div>
+    <div class="qtext">Bu işlem geri alınamaz.</div>
+    <p style="color:var(--ink-dim);font-size:.88rem;line-height:1.6">
+      <b>${kullanici}</b> hesabı ve ona bağlı her şey kalıcı olarak silinir:
+      ilerlemen, serin, XP'in, ustalık kayıtların ve deneme sınavı geçmişin —
+      hem bu cihazdan hem buluttan. Aynı kullanıcı adıyla yeniden kayıt olsan
+      bile eski ilerlemen geri gelmez.</p>
+    <p style="color:var(--ink-dim);font-size:.88rem;line-height:1.6;margin-top:10px">
+      Onaylamak için kullanıcı adını yaz:</p>
+    <input type="text" id="delConfirmInput" class="authinput" autocapitalize="none"
+      autocorrect="off" spellcheck="false" placeholder="${kullanici}"/>
+    <div class="autherr" id="delErr"></div>
+    <button class="btn danger" id="delConfirmBtn" style="width:100%;margin-top:14px" disabled>Hesabımı kalıcı olarak sil</button>
+    <div class="authswitch" style="margin-top:10px"><a id="delCancel">← Vazgeç</a></div>
+  </div>`;
+  const inp = document.getElementById('delConfirmInput');
+  const btn = document.getElementById('delConfirmBtn');
+  const err = document.getElementById('delErr');
+  function esles(){
+    btn.disabled = norm(inp.value) !== norm(kullanici);
+  }
+  inp.addEventListener('input', esles);
+  document.getElementById('delCancel').addEventListener('click', ()=> switchTab('dash'));
+  btn.addEventListener('click', async ()=>{
+    btn.disabled = true; btn.textContent = "Siliniyor…";
+    err.style.display = 'none';
+    const res = (typeof syncDeleteAccount === "function")
+      ? await syncDeleteAccount()
+      : {ok:false, reason:"not_deployed"};
+    if(!res.ok){
+      /* Buluttaki kopya duruyorsa cihazdakini de SİLMİYORUZ: yarım silme,
+         kullanıcının erişemediği ama var olan bir hesap bırakır. */
+      const mesaj = {
+        offline:      "İnternet bağlantısı yok. Hesap silme buluttaki kopyayı da kaldırmak zorunda, o yüzden çevrimiçiyken tekrar dene.",
+        unavailable:  "Sunucuya şu an ulaşılamıyor. Birazdan tekrar dene.",
+        no_session:   "Bulut oturumu düşmüş. Çıkış yapıp tekrar giriş yaptıktan sonra dene.",
+        not_deployed: "Hesap silme sunucu tarafında henüz açık değil. Silme talebin için <a href=\"mailto:mufitcun1@gmail.com?subject=RoTrainer%20-%20hesap%20silme\">destekle iletişime geç</a>; hesabın 30 gün içinde silinir."
+      }[res.reason] || "Hesap silinemedi. Lütfen daha sonra tekrar dene.";
+      err.innerHTML = mesaj;
+      err.style.display = 'block';
+      btn.disabled = false; btn.textContent = "Hesabımı kalıcı olarak sil";
+      return;
+    }
+    if(typeof deleteLocalAccount === "function") await deleteLocalAccount(kullanici);
+    logoutUser();
+  });
+}
+
 function renderDashboard(){
   const L = level();
   const vocIds = L.vocab().map(itemId), verIds = L.verbs().map(itemId), sentIds = L.sentences().map(itemId);
@@ -1333,6 +1389,7 @@ function renderDashboard(){
     <button class="btn secondary" id="pwChangeBtn" style="width:100%">Şifremi Değiştir</button>
     ${(syncStatus === "unlinked" || syncStatus === "error")
       ? `<button class="btn" id="syncConnectFromDash" style="width:100%;margin-top:8px">Buluta Bağlan</button>` : ""}
+    <button class="btn danger" id="deleteAccountBtn" style="width:100%;margin-top:8px">Hesabımı Sil</button>
   </div>` : ""}
   ${currentUser==='admin' ? `<div class="card" id="adminToolsCard">
     <h2 style="margin-top:0">Yönetici Araçları</h2>
@@ -1347,6 +1404,8 @@ function renderDashboard(){
     <div class="autherr" id="backupErr" style="display:none;margin-top:8px"></div>
     <div id="backupOk" style="display:none;margin-top:8px;color:var(--good);font-size:.85rem"></div>
   </div>` : ""}`;
+  const delBtn = document.getElementById('deleteAccountBtn');
+  if(delBtn) delBtn.addEventListener('click', renderAccountDelete);
   const pwBtn = document.getElementById('pwChangeBtn');
   if(pwBtn) pwBtn.addEventListener('click', ()=> renderPasswordChange());
   const connBtn = document.getElementById('syncConnectFromDash');

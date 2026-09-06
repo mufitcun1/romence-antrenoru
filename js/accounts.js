@@ -275,6 +275,22 @@ function enterAsGuest(startImmediately){
   else switchTab('practice');
 }
 
+/* HESAP SİLME — cihaz tarafı.
+   Bulut tarafı (syncDeleteAccount) başarılı olduktan SONRA çağrılır: önce
+   buluttan silip sonra cihazdan silmek, yarıda kalırsa kullanıcıyı "cihazda
+   yok ama bulutta var" durumunda bırakmaz. Kaydedilen belge tüm aile
+   üyelerini birlikte taşıdığı için yalnızca ilgili anahtar çıkarılıyor. */
+async function deleteLocalAccount(username){
+  const key = String(username||"").trim().toLowerCase();
+  if(!key || !ACCOUNTS || !ACCOUNTS.accounts || !ACCOUNTS.accounts[key]) return false;
+  delete ACCOUNTS.accounts[key];
+  /* Bekleyen kayıt, silinen hesabı geri yazmasın. */
+  clearTimeout(saveTimer);
+  pendingSave = false;
+  await saveAccountsToStorage(ACCOUNTS);
+  return true;
+}
+
 function logoutUser(){
   currentUser = null; STATE = null; isGuest = false;
   syncClearSession();     // cihazı paylaşan başka bir aile üyesi bu oturumu devralmasın
