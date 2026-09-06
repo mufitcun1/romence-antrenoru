@@ -92,17 +92,51 @@
 <script>
 /* Uygulamayı "Ana ekrana ekle" ile yüklenebilir/çevrimdışı çalışır yapan
    service worker kaydı. Yeni bir sürüm devreye girdiğinde (controllerchange)
-   sayfayı bir kez otomatik yeniliyoruz ki kullanıcı elle yenilemek zorunda
-   kalmasın; "refreshing" bayrağı bunun sonsuz döngüye girmesini engelliyor. */
+   sayfayı yeniliyoruz ki kullanıcı elle yenilemek zorunda kalmasın.
+
+   AMA TUR ORTASINDA DEĞİL: eskiden yenileme koşulsuzdu ve her yayında, o an
+   soru çözen herkesin turu sessizce siliniyor, seviye seçimi sıfırlanıyordu
+   (kalite kontrol turunda 8/10. soruda bizzat yaşandı). Artık tur/sınav
+   sürüyorsa yenileme erteleniyor; kullanıcıya küçük bir şerit gösteriliyor,
+   isterse hemen yükleyebiliyor, istemezse tur biter bitmez kendiliğinden
+   yükleniyor. "refreshing" bayrağı sonsuz döngüyü engelliyor. */
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", () => {
     navigator.serviceWorker.register("sw.js").catch(() => {});
   });
   let refreshing = false;
-  navigator.serviceWorker.addEventListener("controllerchange", () => {
+
+  const turDevamEdiyor = () => {
+    try { return typeof turDevamEdiyorMu === "function" && turDevamEdiyorMu(); }
+    catch (e) { return false; }   // ui.js henüz yüklenmediyse ertelemeye gerek yok
+  };
+  const yenile = () => {
     if (refreshing) return;
     refreshing = true;
     window.location.reload();
+  };
+  const seritGoster = () => {
+    if (document.getElementById("updateBar")) return;
+    const d = document.createElement("div");
+    d.id = "updateBar";
+    d.setAttribute("role", "status");
+    d.style.cssText = "position:fixed;left:12px;right:12px;bottom:12px;z-index:60;display:flex;gap:10px;" +
+      "align-items:center;justify-content:space-between;max-width:520px;margin:0 auto;padding:10px 14px;" +
+      "border-radius:12px;background:#1f2937;color:#fff;font-size:.82rem;box-shadow:0 6px 20px rgba(0,0,0,.25)";
+    d.innerHTML = '<span>Yeni sürüm hazır — turun bitince yüklenecek.</span>' +
+      '<button type="button" id="updateNowBtn" style="flex:none;border:0;border-radius:8px;padding:6px 12px;' +
+      'font-weight:600;cursor:pointer;background:#fff;color:#1f2937">Şimdi yükle</button>';
+    document.body.appendChild(d);
+    document.getElementById("updateNowBtn").addEventListener("click", yenile);
+  };
+
+  navigator.serviceWorker.addEventListener("controllerchange", () => {
+    if (refreshing) return;
+    if (!turDevamEdiyor()) { yenile(); return; }
+    seritGoster();
+    const izle = setInterval(() => {
+      if (!turDevamEdiyor()) { clearInterval(izle); yenile(); }
+    }, 2000);
   });
 }
 </script>

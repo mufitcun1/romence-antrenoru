@@ -113,6 +113,9 @@ function exerciseForSentence(item){
   } else {
     mode = pick(["translate","dictation"]);
   }
+  /* Deneme sınavında serbest çeviri/dikte yerine dizme: puanlanan bir sınavda
+     tek kabul edilen dizeyi tutturmak zorunda kalmak haksız yanlış üretiyor. */
+  if(typeof testMode !== "undefined" && testMode) mode = "order";
   if(mode==="dictation"){
     return {id:item.id, kind:"type", listen:true, audioText:item.ro, prompt:"Cümleyi dinle ve yaz.", hint:"Cümle — Dinleme", answer:item.ro, needsRoChars:true, roDisplay:item.ro};
   }

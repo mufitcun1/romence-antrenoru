@@ -224,7 +224,7 @@ const VOCAB_A2 = [
 ["yiyecek","Yiyecek/İçecek","baghetă","baget ekmek","f, baghete"],
 ["yiyecek","Yiyecek/İçecek","croasant","kruvasan","n, croasante"],
 ["yiyecek","Yiyecek/İçecek","ștrudel","strudel","n, ștrudele"],
-["yiyecek","Yiyecek/İçecek","pateu","pate/börek","n, pateuri"],
+["yiyecek","Yiyecek/İçecek","pateu","pate (börek türü)","n, pateuri"],
 ["yiyecek","Yiyecek/İçecek","porumb","mısır","m, porumbi"],
 ["yiyecek","Yiyecek/İçecek","macaroană","makarna","f, macaroane"],
 ["yiyecek","Yiyecek/İçecek","spaghete","spagetti","f çoğul"],
@@ -363,7 +363,7 @@ const VOCAB_A2 = [
 ["sehir","Şehir Mekânları","bon","fiş","n, bonuri"],
 ["sehir","Şehir Mekânları","rest","para üstü","n, resturi"],
 ["sehir","Şehir Mekânları","plasă","file, ağ torba","f, plase"],
-["sehir","Şehir Mekânları","rând","sıra","n, rânduri"],
+["sehir","Şehir Mekânları","rând","sıra (dizi; sıra gelmek)","n, rânduri"],
 ["sehir","Şehir Mekânları","loc","yer/koltuk","n, locuri"],
 ["sehir","Şehir Mekânları","spectator","seyirci","m, spectatori"],
 ["sehir","Şehir Mekânları","scenă","sahne","f, scene"],
@@ -380,7 +380,7 @@ const VOCAB_A2 = [
 ["sehir","Şehir Mekânları","amendă","ceza","f, amenzi"],
 ["sehir","Şehir Mekânları","sală de lectură","okuma salonu","f"],
 ["sehir","Şehir Mekânları","agenție imobiliară","emlakçı","f"],
-["sehir","Şehir Mekânları","coadă","kuyruk (sıra)","f, cozi"],
+["sehir","Şehir Mekânları","coadă","kuyruk (beklenen sıra)","f, cozi"],
 ["sehir","Şehir Mekânları","a filma","film çekmek","fiil I (-ez)"],
 ["sehir","Şehir Mekânları","a consulta","muayene etmek","fiil I"],
 ["sehir","Şehir Mekânları","a aresta","tutuklamak","fiil I (-ez)"],
@@ -432,12 +432,12 @@ const VOCAB_A2 = [
 ["zamir","Zamirler","această","bu (dişil)","işaret sıfatı"],
 ["zamir","Zamirler","acești","bu (eril ç.)","işaret sıfatı"],
 ["zamir","Zamirler","aceste","bu (dişil ç.)","işaret sıfatı"],
-["zamir","Zamirler","acesta","bu (eril, sonra)","işaret zamiri"],
-["zamir","Zamirler","aceasta","bu (dişil, sonra)","işaret zamiri"],
+["zamir","Zamirler","acesta","bu (eril, isimden sonra)","işaret zamiri"],
+["zamir","Zamirler","aceasta","bu (dişil, isimden sonra)","işaret zamiri"],
 ["zamir","Zamirler","acel","o (eril)","işaret sıfatı"],
 ["zamir","Zamirler","acea","o (dişil)","işaret sıfatı"],
-["zamir","Zamirler","acela","o (eril, sonra)","işaret zamiri"],
-["zamir","Zamirler","aceea","o (dişil, sonra)","işaret zamiri"],
+["zamir","Zamirler","acela","o (eril, isimden sonra)","işaret zamiri"],
+["zamir","Zamirler","aceea","o (dişil, isimden sonra)","işaret zamiri"],
 ["zamir","Zamirler","care","ki, hangi","ilgi zamiri"],
 ["zamir","Zamirler","niciun","hiçbir (eril)","olumsuz sıfat"],
 ["zamir","Zamirler","nicio","hiçbir (dişil)","olumsuz sıfat"],
@@ -603,7 +603,7 @@ const VERBS_A2 = [
 ["a crește","büyümek",["cresc","crești","crește","creștem","creșteți","cresc"],"crescut","III (-e)","să crească"],
 ["a cunoaște","tanımak",["cunosc","cunoști","cunoaște","cunoaștem","cunoașteți","cunosc"],"cunoscut","III (-e)","să cunoască"],
 ["a dovedi","kanıtlamak",["dovedesc","dovedești","dovedește","dovedim","dovediți","dovedesc"],"dovedit","IV (-esc)","să dovedească"],
-["a dura","sürmek",["(durez)","(durezi)","durează","(durăm)","(durați)","durează"],"durat","I (-ez; defectiv, mai ales pers.3)","să dureze"],
+["a dura","sürmek",["(durez)","(durezi)","durează","(durăm)","(durați)","durează"],"durat","I (-ez; kusurlu, çoğunlukla 3. şahıs)","să dureze"],
 ["a explica","açıklamak",["explic","explici","explică","explicăm","explicați","explică"],"explicat","I","să explice"],
 ["a hotărî","kararlaştırmak",["hotărăsc","hotărăști","hotărăște","hotărâm","hotărâți","hotărăsc"],"hotărât","IV (-î/-ăsc)","să hotărască"],
 ["a împrumuta","ödünç almak/vermek",["împrumut","împrumuți","împrumută","împrumutăm","împrumutați","împrumută"],"împrumutat","I","să împrumute"],
@@ -725,8 +725,8 @@ const SENTENCES_A2 = [
 ["Casa în care locuiesc este veche.","İçinde oturduğum ev eski."],
 ["Prietenul cu care am vorbit e doctor.","Konuştuğum arkadaş doktor."],
 ["Aceasta este cartea pe care o citesc.","Bu, okuduğum kitap."],
-["El o să meargă la doctor mâine.","O yarın doktora gidecek."],
-["Ei o să vină la petrecere.","Onlar partiye gelecekler."],
+["El o să meargă la doctor mâine.","O (erkek) yarın doktora gidecek."],
+["Ei o să vină la petrecere.","Onlar (erkekler) partiye gelecekler."],
 ["Vreau să citească toată cartea.","Bütün kitabı okumasını istiyorum."],
 ["Trebuie să plece devreme.","Erken çıkması gerekiyor."],
 ["Sper să fie bine.","İyi olmasını umuyorum."],
@@ -744,7 +744,7 @@ const SENTENCES_A2 = [
 ["Toți au venit cu excepția Anei.","Ana hariç herkes geldi."],
 ["Conform programului, plecăm la opt.","Programa göre sekizde çıkıyoruz."],
 ["Casa mea este mai mare decât a ta.","Benim evim seninkinden büyük."],
-["El este la fel de înalt ca mine.","O benim kadar uzun boylu."],
+["El este la fel de înalt ca mine.","O (erkek) benim kadar uzun boylu."],
 ["Acesta este cel mai bun restaurant din oraș.","Bu, şehirdeki en iyi restoran."],
 ["Rochia este mai puțin scumpă decât pantofii.","Elbise ayakkabılardan daha az pahalı."],
 ["Nu am niciun ban la mine.","Üzerimde hiç param yok."],
@@ -860,7 +860,7 @@ const DEMONS_ITEMS = [
 
 /* --- 6.6 acesta/acela uzun biçim ve aceea/aceia tuzağı --- */
 const DEMONSLONG_ITEMS = [
-["Fata ___ este sora mea.","aceea","O kız kız kardeşim.",["aceia","acela","acelea"]],
+["Fata ___ este sora mea.","aceea","O kız, kız kardeşim.",["aceia","acela","acelea"]],
 ["Copiii ___ sunt vecinii mei.","aceia","O çocuklar komşularım.",["aceea","acelea","acela"]],
 ["Omul ___ lucrează aici.","acesta","Bu adam burada çalışıyor.",["aceasta","aceștia","acestea"]],
 ["Cărțile ___ sunt noi.","acestea","Bu kitaplar yeni.",["aceasta","acesta","aceștia"]],
@@ -1135,15 +1135,66 @@ EXPRESII_A2.forEach((e,i)=> e.push("expr_a2_"+i));  // e[3] = id
    (örn. "Mult noroc!" ve "Baftă!" ikisi de "Bol şans!"); bu durumda
    seçeneklerde tekrar oluşur ve soru iki doğru cevaplı hâle gelir. */
 function _benzersizCeldirici(havuz, alan, dogru, adet){
-  const gorulen = new Set([dogru]);
+  const esitle = (typeof norm==="function") ? norm : (x=>String(x||"").trim().toLowerCase());
+  const gorulen = new Set([esitle(dogru)]);
   const cikti = [];
   for(const x of shuffle(havuz)){
     const deger = alan(x);
-    if(gorulen.has(deger)) continue;
-    gorulen.add(deger); cikti.push(deger);
+    if(gorulen.has(esitle(deger))) continue;
+    gorulen.add(esitle(deger)); cikti.push(deger);
     if(cikti.length===adet) break;
   }
   return cikti;
+}
+
+/* EŞ ANLAMLI KELİME GRUPLARI
+   Havuzda birbirinin yerine geçebilen kayıtlar var: "sayesinde" hem
+   datorită hem mulțumită hem grație ile söylenebilir. Çeldirici filtresi
+   yalnızca BİREBİR aynı dizeyi eliyordu, dolayısıyla iki doğru cevaplı
+   soru üretilebiliyordu ("dürüst" sorusunda hem onest hem cinstit).
+   Aynı gruptaki kayıtlar (a) birbirine çeldirici olamaz, (b) yazarak
+   cevapta birbirinin yerine kabul edilir. */
+const ES_ANLAMLI_A2 = [
+  ["onest","cinstit"],                 // dürüst / namuslu
+  ["rând","coadă"],                    // sıra / kuyruk
+  ["datorită","mulțumită","grație"],   // sayesinde
+  ["fiindcă","deoarece"],              // çünkü
+  ["pateu","plăcintă"],                // börek
+  ["râu","fluviu"],                    // nehir
+  ["cremă","smântână"]                 // krema
+];
+function _esAnlamlilar(ro){
+  const g = ES_ANLAMLI_A2.find(gr=> gr.indexOf(ro) >= 0);
+  return g ? g.filter(x=> x!==ro) : [];
+}
+
+/* Fiil mi isim mi? A1'de çeldiriciler sözcük türüne göre seçiliyor; isimler
+   arasına tek fiil düşünce (hastane / satın almak / menü / banka) cevap
+   kelimeyi bilmeden bulunuyordu. A2 havuzunun 516 maddesinin 59'u fiil ve
+   27 temanın 15'i ikisini bir arada tutuyor — yani sık karşılaşılan bir
+   durum. Aynı kural burada da uygulanıyor. */
+const _a2FiilMi = ro => /^a\s/.test(String(ro||"").trim());
+
+/* Bir kelime sorusu için uygun çeldirici SATIRLARINI verir: aynı sözcük
+   türünden, eş anlamlı olmayan, aynı Romence/Türkçe karşılığı taşımayan.
+   Tema havuzu darsa (çeldiriciler her turda aynı dörtlü olmasın diye)
+   tema dışından tamamlanır. */
+function _a2KelimeCeldiricileri(satir, adet){
+  const esitle = (typeof norm==="function") ? norm : (x=>String(x||"").trim().toLowerCase());
+  const [theme,,ro,tr,,id] = satir;
+  const yasak = _esAnlamlilar(ro);
+  const uygun = x => x[5]!==id
+                  && esitle(x[2])!==esitle(ro) && esitle(x[3])!==esitle(tr)
+                  && yasak.indexOf(x[2]) < 0
+                  && _a2FiilMi(x[2])===_a2FiilMi(ro);
+  const hedef = adet + 3;                       // şıklar her turda değişsin
+  let havuz = VOCAB_A2.filter(x=> x[0]===theme && uygun(x));
+  if(havuz.length < hedef){
+    const disari = VOCAB_A2.filter(x=> x[0]!==theme && uygun(x));
+    havuz = havuz.concat(shuffle(disari).slice(0, hedef - havuz.length));
+  }
+  if(havuz.length < adet) havuz = VOCAB_A2.filter(x=> x[5]!==id && yasak.indexOf(x[2]) < 0);
+  return shuffle(havuz);
 }
 
 /* --- 8.1 Kelime (A2) — A1'deki exerciseForVocab ile aynı mantık, VOCAB_A2 havuzu --- */
@@ -1152,9 +1203,7 @@ function exerciseForVocabA2(v){
   const entry = (typeof getEntry==="function") ? getEntry(id) : {box:0};
   const typed = entry.box>=3;
   const dir = Math.random()<0.5 ? "ro2tr" : "tr2ro";
-  const farkli = x => x[5]!==id && x[2]!==ro && x[3]!==tr;
-  const havuzTema = VOCAB_A2.filter(x=>x[0]===theme && farkli(x));
-  const havuz = havuzTema.length>=3 ? havuzTema : VOCAB_A2.filter(farkli);
+  const havuz = _a2KelimeCeldiricileri(v, 3);
   if(!typed){
     if(dir==="ro2tr"){
       const secenekler = shuffle([tr, ..._benzersizCeldirici(havuz, d=>d[3], tr, 3)]);
@@ -1165,13 +1214,24 @@ function exerciseForVocabA2(v){
     return {id, kind:"mc", prompt:`"${tr}" Romence nedir?`, hint:themeLabel, catKey:theme,
             options:secenekler, answer:ro, roDisplay:ro};
   }
+  /* Yazarak cevapta çok karşılıklı gloss'un tek parçası da kabul edilmeli
+     ("kayınbirader/enişte" için "kayınbirader"). A2 havuzunun 76 maddesi
+     eğik çizgili ya da parantezli; anlamSecenekleri() bunu A1'de çözüyordu,
+     A2'de çağrılmıyordu ve kullanıcı haksız yere yanlış alıyordu. */
   if(dir==="ro2tr") return {id, kind:"type", prompt:`"${ro}" ne demek? (Türkçe yaz)`, hint:themeLabel,
-                            catKey:theme, answer:tr, needsRoChars:false, roDisplay:ro};
+                            catKey:theme, answer:tr,
+                            answerAlts:(typeof anlamSecenekleri==="function" ? anlamSecenekleri(tr) : null),
+                            needsRoChars:false, roDisplay:ro};
+  /* Türkçeden Romenceye yazarken eş anlamlı Romence karşılık da doğrudur. */
   return {id, kind:"type", prompt:`"${tr}" kelimesini Romence yaz.`, hint:themeLabel, catKey:theme,
-          answer:ro, needsRoChars:true, roDisplay:ro};
+          answer:ro, answerAlts:_esAnlamlilar(ro), needsRoChars:true, roDisplay:ro};
 }
 
 /* --- 8.2 Fiil (A2) — şimdiki zaman / participiu / conjunctiv 3. --- */
+/* Çip'te yalnızca "I" ya da "III (-e)" yazıyordu; kullanıcıya çekim sınıfı
+   numarası tek başına bir şey söylemiyor. Başına ne olduğunu yazıyoruz. */
+const _a2FiilEtiket = grup => "Fiil çekimi · " + grup;
+
 function exerciseForVerbA2(v){
   const [ro,tr,forms,participiu,grup,conj3,id] = v;
   const entry = (typeof getEntry==="function") ? getEntry(id) : {box:0};
@@ -1179,19 +1239,21 @@ function exerciseForVerbA2(v){
   const mode = pick(modlar);
   if(mode==="past"){
     return {id, kind:"type", prompt:`"${ro}" (${tr}) — geçmiş zaman ortacını yaz (a avea + ___).`,
-            hint:grup, answer:participiu, needsRoChars:true, roDisplay:participiu};
+            hint:_a2FiilEtiket(grup)+" — ortaç", answer:participiu, needsRoChars:true, roDisplay:participiu};
   }
   if(mode==="conj"){
     return {id, kind:"type", prompt:`"${ro}" (${tr}) — "el/ea" için conjunctiv biçimini yaz (o să ___).`,
-            hint:grup+" — conjunctiv 3.", answer:conj3, needsRoChars:true, roDisplay:conj3};
+            hint:_a2FiilEtiket(grup)+" — conjunctiv 3.", answer:conj3, needsRoChars:true, roDisplay:conj3};
   }
   const p = Math.floor(Math.random()*6);
   if(forms[p]==="—" || forms[p].startsWith("(")){ // kusurlu (defectiv) fiil: yalnız 3. şahıs
+    /* Grup etiketi zaten "yalnız 3. şahıs" diyor; ikinci kez eklemiyoruz. */
+    const ek = /3\. şahıs/.test(grup) ? "" : " — yalnız 3. şahıs";
     return {id, kind:"type", prompt:`"${ro}" (${tr}) — "el/ea" için şimdiki zaman çekimini yaz.`,
-            hint:grup+" — yalnız 3. şahıs", answer:forms[2], needsRoChars:true, roDisplay:forms[2]};
+            hint:_a2FiilEtiket(grup)+ek, answer:forms[2], needsRoChars:true, roDisplay:forms[2]};
   }
   return {id, kind:"type", prompt:`"${ro}" (${tr}) — "${PERSON_LABEL[p]}" için şimdiki zaman çekimini yaz.`,
-          hint:grup, answer:forms[p], needsRoChars:true, roDisplay:forms[p]};
+          hint:_a2FiilEtiket(grup), answer:forms[p], needsRoChars:true, roDisplay:forms[p]};
 }
 
 /* --- 8.3 Kalıp ifade --- */
@@ -1207,103 +1269,171 @@ function exerciseForExpresie(e){
 }
 
 /* --- 8.4 Cümle (A2) — kelime sıralama veya çeviri --- */
+
+/* Aynı Türkçe cümlenin birden fazla doğru Romence karşılığı olabiliyor.
+   Gelecek zamanın iki biçimi de standarttır ve havuz ikisini de öğretiyor;
+   yalnızca birini kabul etmek doğru yazan kullanıcıyı yanlış sayıyordu. */
+const SENT_A2_ALT = {
+  "Ne vom întâlni săptămâna viitoare.": ["O să ne întâlnim săptămâna viitoare."],
+  "El o să meargă la doctor mâine.":    ["El va merge la doctor mâine."],
+  "Ei o să vină la petrecere.":         ["Ei vor veni la petrecere."]
+};
+
 function exerciseForSentenceA2(item){
   /* A1'deki exerciseForSentence ile aynı imza: {ro, tr, id}. Böylece ui.js
      iki seviyede de aynı çağrıyı yapabiliyor. */
   const {ro, tr, id} = item;
-  const mode = pick(["order","translate","translate"]);
+  const roAlt = SENT_A2_ALT[ro] || [];
+  /* Deneme sınavında serbest çeviri sorulmuyor. Puanlanan bir sınavda tam
+     Türkçe dizeyi tutturmak zorunda kalmak haksız yanlış üretiyordu
+     ("Bu konuda hiçbir şey bilmiyorum." için tek bir kabul edilen karşılık).
+     Dizme sorusu aynı bilgiyi ölçüyor ama nesnel olarak puanlanabiliyor. */
+  const sinavda = typeof testMode !== "undefined" && testMode;
+  const mode = sinavda ? "order" : pick(["order","translate","translate"]);
   if(mode==="translate"){
     if(Math.random()<0.5) return {id, kind:"type", prompt:`"${ro}" ne demek? (Türkçe yaz)`,
-                                  hint:"A2 Cümle — Çeviri", answer:tr, needsRoChars:false, roDisplay:ro};
+                                  hint:"A2 Cümle — Çeviri", answer:tr,
+                                  answerAlts:(typeof anlamSecenekleri==="function" ? anlamSecenekleri(tr) : null),
+                                  needsRoChars:false, roDisplay:ro};
     return {id, kind:"type", prompt:`"${tr}" cümlesini Romence yaz.`, hint:"A2 Cümle — Çeviri",
-            answer:ro, needsRoChars:true, roDisplay:ro};
+            answer:ro, answerAlts:roAlt, needsRoChars:true, roDisplay:ro};
   }
-  const kelimeler = ro.replace(/[.!?]+$/,"").split(" ").filter(Boolean);
+  /* TAŞLARI NÖTRLEŞTİRME — A1'deki exerciseForSentence ile aynı kural.
+     Taşlar cümledeki hâliyle basılınca tek büyük harfli taş ilk kelimeyi,
+     virgül taşıyan taş kendi yerini ele veriyordu: bulmaca Romence bilmeden
+     çözülüyordu. İç noktalama kırpılıyor, cümle başındaki büyük harf
+     küçültülüyor; özel adlar (România, Ali…) büyük kalır, yoksa yazımı
+     yanlış öğretiriz. Karşılaştırma norm() ile yapıldığı için doğruluk
+     etkilenmiyor; doğru yazılışı kullanıcı cevaptan sonra görüyor. */
+  const ozel = (typeof ozelAdSeti==="function") ? ozelAdSeti() : new Set();
+  const kelimeler = ro.replace(/[.!?]+$/,"").split(" ").filter(Boolean)
+    .map(w=> w.replace(/[,;:!?.]+$/,""))
+    .map((w,i)=> (i===0 && !ozel.has(w)) ? w.charAt(0).toLowerCase()+w.slice(1) : w);
   return {id, kind:"order", prompt:"Kelimeleri doğru sıraya diz.", hint:"A2 Cümle — Kelime Sırası",
           cue:tr, words:shuffle(kelimeler.slice()), answer:kelimeler.join(" "), roDisplay:ro};
 }
 
 /* --- 8.5 Dilbilgisi (A2) --- */
+/* MADDE BAŞINA KİMLİK
+   Eskiden bütün dativ soruları tek "gr_a2_dativ" kimliğini taşıyordu:
+   tekrar motoru 40 farklı maddeyi tek öğe sanıyor, hangi maddede
+   zorlandığın izlenemiyordu. A1'deki gramSec ile aynı desen — her madde
+   kendi kimliğini alır, seçim ustalık ağırlıklı yapılır.
+   STATE yalnızca oturum açıldıktan sonra var; yoksa düz rastgele seçime
+   düşüyoruz (önizleme/erken çağrıda çökmesin). */
+function _gramSecA2(list, topic, uygunMu){
+  const idx = list.map((_,i)=>i).filter(i=> !uygunMu || uygunMu(list[i]));
+  const ids = idx.map(i=> "gr_a2_"+topic+"_"+i);
+  const agirlikli = typeof weightedSample === "function"
+                 && typeof STATE !== "undefined" && STATE && STATE.mastery;
+  const sec = (agirlikli ? weightedSample(ids,1)[0] : null) || pick(ids);
+  return [list[idx[ids.indexOf(sec)]], sec];
+}
+
 function exerciseForGrammarA2(topic){
   const L = GRAMMAR_LABELS_A2[topic] || topic;
-  const mcFromItem = (arr, idPrefix) => {
-    const [sent,ans,tr,distr] = pick(arr);
+  const mcFromItem = (arr, konu) => {
+    const [madde,id] = _gramSecA2(arr, konu);
+    const [sent,ans,tr,distr] = madde;
     /* "(boş)" cevabı, boşluğa HİÇBİR ŞEY gelmemesi gerektiği anlamına gelir
        (örn. "pe" edatının kullanılmadığı cansız nesneler). Bu durumda doğru
        Romence gösterimi boşluğun tamamen silinmesiyle elde edilir. */
     const goster = (ans==="(boş)") ? sent.replace(/___ ?/,"") : sent.replace("___",ans);
-    return {id:idPrefix, kind:"mc", prompt:sent.replace("___","______"), hint:L, cue:tr,
+    return {id, kind:"mc", prompt:sent.replace("___","______"), hint:L, cue:tr,
             options:shuffle([ans,...distr]), answer:ans, roDisplay:goster};
   };
 
   if(topic==="dativ"){
-    const [belirsiz,cins,ans] = pick(DATIV_ITEMS);
-    return {id:"gr_a2_dativ", kind:"type",
-            prompt:`"${belirsiz}" (${cins}) — dativ/genitiv belirli hâlini yaz. (Örn: kime? — ___)`,
-            hint:L, answer:ans, needsRoChars:true, roDisplay:ans};
+    const [madde,id] = _gramSecA2(DATIV_ITEMS, "dativ");
+    const [belirsiz,cins,ans] = madde;
+    /* Cinsiyet soruda yazmıyor: Romencede asıl zor iş ismin cinsiyetini
+       bilmek, onu hediye edince geriye mekanik ek getirmek kalıyordu.
+       Bilgi cevaptan SONRA veriliyor — A1 sıfat/artikel sorularındaki
+       düzeltmenin aynısı. */
+    return {id, kind:"type",
+            prompt:`"${belirsiz}" — dativ/genitiv belirli hâlini yaz. (Örn: kime? — ___)`,
+            hint:L, answer:ans, needsRoChars:true, roDisplay:ans,
+            aciklama:`"${belirsiz}" ${cins} bir isim.`};
   }
-  if(topic==="dativpron")   return mcFromItem(DATIVPRON_ITEMS,"gr_a2_dativpron");
-  if(topic==="placea")      return mcFromItem(PLACEA_ITEMS,"gr_a2_placea");
-  if(topic==="datacuz")     return mcFromItem(DATACUZ_ITEMS,"gr_a2_datacuz");
-  if(topic==="demonslong")  return mcFromItem(DEMONSLONG_ITEMS,"gr_a2_demonslong");
-  if(topic==="care")        return mcFromItem(CARE_ITEMS,"gr_a2_care");
-  if(topic==="carece")      return mcFromItem(CARECE_ITEMS,"gr_a2_carece");
-  if(topic==="prepcase")    return mcFromItem(PREPCASE_ITEMS,"gr_a2_prepcase");
-  if(topic==="cauza")       return mcFromItem(CAUZA_ITEMS,"gr_a2_cauza");
-  if(topic==="compar")      return mcFromItem(COMPAR_ITEMS,"gr_a2_compar");
-  if(topic==="negativ")     return mcFromItem(NEGATIV_ITEMS,"gr_a2_negativ");
-  if(topic==="baglac2")     return mcFromItem(BAGLAC_A2_ITEMS,"gr_a2_baglac2");
-  if(topic==="pe")          return mcFromItem(PE_ITEMS,"gr_a2_pe");
+  if(topic==="dativpron")   return mcFromItem(DATIVPRON_ITEMS,"dativpron");
+  if(topic==="placea")      return mcFromItem(PLACEA_ITEMS,"placea");
+  if(topic==="datacuz")     return mcFromItem(DATACUZ_ITEMS,"datacuz");
+  if(topic==="demonslong")  return mcFromItem(DEMONSLONG_ITEMS,"demonslong");
+  if(topic==="care")        return mcFromItem(CARE_ITEMS,"care");
+  if(topic==="carece")      return mcFromItem(CARECE_ITEMS,"carece");
+  if(topic==="prepcase")    return mcFromItem(PREPCASE_ITEMS,"prepcase");
+  if(topic==="cauza")       return mcFromItem(CAUZA_ITEMS,"cauza");
+  if(topic==="compar")      return mcFromItem(COMPAR_ITEMS,"compar");
+  if(topic==="negativ")     return mcFromItem(NEGATIV_ITEMS,"negativ");
+  if(topic==="baglac2")     return mcFromItem(BAGLAC_A2_ITEMS,"baglac2");
+  if(topic==="pe")          return mcFromItem(PE_ITEMS,"pe");
 
   if(topic==="demons"){
-    const [isim,tur,ans,distr] = pick(DEMONS_ITEMS);
-    return {id:"gr_a2_demons", kind:"mc", prompt:`"${isim}" (${tur}) — doğru işaret sıfatı hangisi?`,
-            hint:L, options:shuffle([ans,...distr]), answer:ans, roDisplay:ans+" "+isim};
+    const [madde,id] = _gramSecA2(DEMONS_ITEMS, "demons");
+    const [isim,tur,ans,distr] = madde;
+    return {id, kind:"mc", prompt:`"${isim}" — doğru işaret sıfatı hangisi?`,
+            hint:L, options:shuffle([ans,...distr]), answer:ans, roDisplay:ans+" "+isim,
+            aciklama:`"${isim}" ${tur} bir isim.`};
   }
   if(topic==="conj3"){
-    const [mastar,tr,ans] = pick(CONJ3_ITEMS);
-    return {id:"gr_a2_conj3", kind:"type",
+    const [madde,id] = _gramSecA2(CONJ3_ITEMS, "conj3");
+    const [mastar,tr,ans] = madde;
+    return {id, kind:"type",
             prompt:`"${mastar}" (${tr}) — "el/ea" için conjunctiv biçimini yaz. (o să ___)`,
             hint:L, answer:ans, needsRoChars:true, roDisplay:ans};
   }
   if(topic==="imperativ"){
-    const [olumlu,olumsuz,tr] = pick(IMPERATIV_ITEMS);
-    if(Math.random()<0.5) return {id:"gr_a2_imperativ", kind:"type",
+    const [madde,id] = _gramSecA2(IMPERATIV_ITEMS, "imperativ");
+    const [olumlu,olumsuz,tr] = madde;
+    if(Math.random()<0.5) return {id, kind:"type",
             prompt:`Olumsuz emir yap: "${olumlu}"`, hint:L+" — olumsuzda MASTAR kullanılır",
             cue:tr, answer:olumsuz, needsRoChars:true, roDisplay:olumsuz};
-    return {id:"gr_a2_imperativ", kind:"type", prompt:`Olumlu emir yap: "${olumsuz}"`,
+    return {id, kind:"type", prompt:`Olumlu emir yap: "${olumsuz}"`,
             hint:L, cue:tr, answer:olumlu, needsRoChars:true, roDisplay:olumlu};
   }
   if(topic==="imppron"){
-    const [parcalar,ans,tr] = pick(IMPPRON_ITEMS);
-    return {id:"gr_a2_imppron", kind:"type", prompt:`Birleştir: ${parcalar}`,
+    const [madde,id] = _gramSecA2(IMPPRON_ITEMS, "imppron");
+    const [parcalar,ans,tr] = madde;
+    /* strictHyphen: bu sorunun ölçtüğü ŞEY tirenin kendisi. norm() kısa
+       çizgiyi siliyor (A1/A2'de bilerek hoşgörülü), o yüzden "laso" da
+       "Las-o!" sayılıyordu — yani kural hiç ölçülmüyordu. B1 klitik
+       sorularındaki sıkı karşılaştırıcı burada da kullanılıyor. */
+    return {id, kind:"type", prompt:`Birleştir: ${parcalar}`, strictHyphen:true,
             hint:L+" — tire ile yazılır", cue:tr, answer:ans, needsRoChars:true, roDisplay:ans};
   }
   if(topic==="adjtip"){
-    const [sifat,obek,ans,yanlis] = pick(ADJTIP_ITEMS);
-    return {id:"gr_a2_adjtip", kind:"mc", prompt:obek.replace("___","______"),
+    const [madde,id] = _gramSecA2(ADJTIP_ITEMS, "adjtip");
+    const [sifat,obek,ans,yanlis] = madde;
+    return {id, kind:"mc", prompt:obek.replace("___","______"),
             hint:L+" — bazı sıfatlar HİÇ çekilmez", options:shuffle([ans,yanlis]),
             answer:ans, roDisplay:obek.replace("___",ans)};
   }
   if(topic==="ordinal"){
-    const [sayi,cins,ans] = pick(ORDINAL_ITEMS);
-    return {id:"gr_a2_ordinal", kind:"type", prompt:`"${sayi}" sıra sayısını yaz (${cins}).`,
+    const [madde,id] = _gramSecA2(ORDINAL_ITEMS, "ordinal");
+    const [sayi,cins,ans] = madde;
+    return {id, kind:"type", prompt:`"${sayi}" sıra sayısını yaz (${cins}).`,
             hint:L, answer:ans, needsRoChars:true, roDisplay:ans};
   }
   if(topic==="reflex"){
-    const [kaynak,hedef,ans,tr] = pick(REFLEX_ITEMS);
-    return {id:"gr_a2_reflex", kind:"type", prompt:`"${kaynak}" — ${hedef} biçimine çevir.`,
+    const [madde,id] = _gramSecA2(REFLEX_ITEMS, "reflex");
+    const [kaynak,hedef,ans,tr] = madde;
+    return {id, kind:"type", prompt:`"${kaynak}" — ${hedef} biçimine çevir.`,
             hint:L, cue:tr, answer:ans, needsRoChars:true, roDisplay:ans};
   }
   if(topic==="klitik"){
-    const [parcalar,ans,tr] = pick(KLITIK_ITEMS);
-    return {id:"gr_a2_klitik", kind:"type", prompt:`Doğru yazımı yaz: ${parcalar}`,
+    const [madde,id] = _gramSecA2(KLITIK_ITEMS, "klitik");
+    const [parcalar,ans,tr] = madde;
+    return {id, kind:"type", prompt:`Doğru yazımı yaz: ${parcalar}`, strictHyphen:true,
             hint:L+" — kısaltma ve tire kuralı", cue:tr, answer:ans, needsRoChars:true, roDisplay:ans};
   }
   if(topic==="fonetik"){
-    const [tip,soru,ans,distr,aciklama] = pick(FONETIK_ITEMS);
-    return {id:"gr_a2_fonetik", kind:"mc", prompt:soru, hint:"Ses bilgisi — "+aciklama,
-            options:shuffle([ans,...distr]), answer:ans, roDisplay:ans};
+    const [madde,id] = _gramSecA2(FONETIK_ITEMS, "fonetik");
+    const [tip,soru,ans,distr,aciklama] = madde;
+    /* Kural eskiden ipucu çipinde, yani cevaptan ÖNCE yazıyordu
+       ("son -a belirlilik artikelidir") ve cevabı ele veriyordu.
+       Artık cevaptan sonra gösteriliyor — B1 gramer ipuçlarıyla aynı ilke. */
+    return {id, kind:"mc", prompt:soru, hint:"Ses bilgisi",
+            options:shuffle([ans,...distr]), answer:ans, roDisplay:ans, aciklama};
   }
   return exerciseForGrammarA2("dativpron"); // güvenli geri dönüş
 }
