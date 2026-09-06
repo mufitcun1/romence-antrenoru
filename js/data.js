@@ -27,7 +27,7 @@ const VOCAB = [
 ["meslek","meslekler","profesor","öğretmen"],["meslek","meslekler","doctor","doktor"],["meslek","meslekler","asistentă medicală","hemşire"],
 ["meslek","meslekler","farmacist","eczacı"],["meslek","meslekler","inginer","mühendis"],["meslek","meslekler","pictor","ressam"],
 ["meslek","meslekler","polițist","polis"],["meslek","meslekler","actor","aktör"],["meslek","meslekler","chelner","garson"],
-["meslek","meslekler","șofer","şoför"],["meslek","meslekler","vânzător","satıcı"],["meslek","meslekler","birou","ofis"],
+["meslek","meslekler","șofer","şoför"],["meslek","meslekler","vânzător","satıcı"],["mekan","şehir mekanları","birou","ofis"],
 ["meslek","meslekler","coleg","meslektaş"],["meslek","meslekler","avocat","avukat"],["meslek","meslekler","pensionar","emekli"],
 ["vucut","vücut/sağlık","cap","baş"],["vucut","vücut/sağlık","gât","boyun"],["vucut","vücut/sağlık","păr","saç"],
 ["vucut","vücut/sağlık","ochi","göz"],["vucut","vücut/sağlık","nas","burun"],["vucut","vücut/sağlık","ureche","kulak"],
@@ -47,7 +47,7 @@ const VOCAB = [
 ["konut","konut","curte","avlu"],["konut","konut","cameră de zi","oturma odası"],["konut","konut","bucătărie","mutfak"],
 ["konut","konut","dormitor","yatak odası"],["konut","konut","baie","banyo"],["konut","konut","hol","hol"],
 ["konut","konut","masă","masa"],["konut","konut","scaun","sandalye"],["konut","konut","dulap","dolap"],["konut","konut","pat","yatak"],
-["konut","konut","canapea","kanepe"],["konut","konut","frigider","buzdolabı"],["konut","konut","aragaz","ocak"],
+["konut","konut","canapea","kanepe"],["konut","konut","frigider","buzdolabı"],["konut","konut","aragaz","ocak (aragaz)"],
 ["konut","konut","mașină de spălat","çamaşır makinesi"],["konut","konut","farfurie","tabak"],["konut","konut","pahar","bardak"],
 ["konut","konut","lingură","kaşık"],["konut","konut","furculiță","çatal"],["konut","konut","cuțit","bıçak"],
 ["yiyecek","yiyecek/içecek","mic dejun","kahvaltı"],["yiyecek","yiyecek/içecek","prânz","öğle yemeği"],["yiyecek","yiyecek/içecek","cină","akşam yemeği"],
@@ -158,7 +158,7 @@ const VERBS = [
 ["a juca","oyun/spor oynamak",["joc","joci","joacă","jucăm","jucați","joacă"],"jucat","-A grubu"],
 ["a cânta","şarkı söylemek/çalgı çalmak",["cânt","cânți","cântă","cântăm","cântați","cântă"],"cântat","-A grubu"],
 ["a chema","çağırmak",["chem","chemi","cheamă","chemăm","chemați","cheamă"],"chemat","-A grubu"],
-["a costa","fiyatı olmak",["cost","costi","costă","costăm","costați","costă"],"costat","-A grubu"],
+["a costa","fiyatı olmak",["cost","coști","costă","costăm","costați","costă"],"costat","-A grubu"],
 ];
 
 /* Gramer alıştırma şablonları */
@@ -188,16 +188,29 @@ const QWORD_ITEMS = [
 ["___ este cartea ta?","Care","Hangisi senin kitabın?",["Ce","Cine","Cum"]],
 ["___ pleci?","De ce","Neden gidiyorsun?",["Cum","Ce","Care"]],
 ];
-// sıfat: [isim, cinsiyet, sıfat-eril, sıfat-dişil]
+/* sıfat: [isim, cinsiyet, sıfat-ERİL, sıfat-DİŞİL]
+   SÜTUN SIRASI SABİTTİR: 3. sütun her zaman eril, 4. sütun her zaman dişil
+   biçimdir — ismin cinsiyetine göre yer değiştirmez. (Eskiden dişil satırlarda
+   "doğru cevap önce" mantığıyla ters yazılmıştı; exerciseForGrammar 4. sütunu
+   dişil sandığı için uygulama "mașină nou", "casă mic", "fată frumos" gibi
+   YANLIŞ biçimleri doğru cevap olarak veriyordu.)
+   Nötr isimler tekilde eril gibi çekilir (un parc frumos), bu yüzden nötr
+   satırlarda da doğru biçim 3. sütundur.
+   İki sütunu aynı olan sıfat KULLANILMAZ (mare/mare gibi) — iki şık birebir
+   aynı çıkar ve sorunun doğru cevabı ayırt edilemez. */
 const ADJ_ITEMS = [
-["copil","eril","mic","mică"],["casă","dişil","mică","mic"],["câine","eril","bun","bună"],
-["floare","dişil","frumoasă","frumos"],["om","eril","înalt","înaltă"],["fată","dişil","frumoasă","frumos"],
-["frate","eril","tânăr","tânără"],["mașină","dişil","nouă","nou"],["parc","eril","mare","mare"],["carte","dişil","veche","vechi"],
+["copil","eril","mic","mică"],["casă","dişil","mic","mică"],["câine","eril","bun","bună"],
+["floare","dişil","frumos","frumoasă"],["om","eril","înalt","înaltă"],["fată","dişil","frumos","frumoasă"],
+["frate","eril","tânăr","tânără"],["mașină","dişil","nou","nouă"],["parc","nötr","frumos","frumoasă"],["carte","dişil","vechi","veche"],
 ];
-const ART_ITEMS = [ // [isim-yalın, cinsiyet, belirtili-doğru]
-["copil","eril","copilul"],["parc","eril","parcul"],["câine","eril","câinele"],
+/* [isim-yalın, cinsiyet, belirtili-doğru]
+   Romencede üç cinsiyet vardır; parc/scaun/telefon NÖTR'dür (çoğulları
+   parcuri/scaune/telefoane). Tekilde eril gibi çekildikleri için belirtili
+   biçimleri -ul alır; "eril" diye etiketlemek çoğulu yanlış öğretiyordu. */
+const ART_ITEMS = [
+["copil","eril","copilul"],["parc","nötr","parcul"],["câine","eril","câinele"],
 ["casă","dişil","casa"],["cheie","dişil","cheia"],["mașină","dişil","mașina"],
-["telefon","eril","telefonul"],["scaun","eril","scaunul"],["floare","dişil","floarea"],["stradă","dişil","strada"],
+["telefon","nötr","telefonul"],["scaun","nötr","scaunul"],["floare","dişil","floarea"],["stradă","dişil","strada"],
 ];
 const NUM_ITEMS = [
 ["11","unsprezece"],["12","doisprezece"],["15","cincisprezece"],["20","douăzeci"],["21","douăzeci și unu"],
@@ -239,7 +252,7 @@ const FIXED_SENTENCES = [
   ["Voi sunteți la curs acum.","Siz şimdi kurstasınız.","sent_31"],
   ["Tu ești în România?","Sen Romanya'da mısın?","sent_32"],
   ["Ali nu este acum aici, dar Ayșe este aici.","Ali şimdi burada değil ama Ayşe burada.","sent_33"],
-  ["Eu sunt aici mereu, dar tu ești niciodată acasă.","Ben her zaman buradayım ama sen hiçbir zaman evde değilsin.","sent_34"],
+  ["Eu sunt mereu aici, dar tu nu ești niciodată acasă.","Ben her zaman buradayım ama sen hiçbir zaman evde değilsin.","sent_34"],
   ["Eu am timp.","Benim zamanım var.","sent_35"],
   ["Tu ai timp.","Senin zamanın var.","sent_36"],
   ["Noi nu avem cafea.","Bizim kahvemiz yok.","sent_37"],
