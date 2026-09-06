@@ -22,7 +22,7 @@ const THEME_NAMES_B1 = {"kavram": "Soyut Kavramlar", "is": "İş ve Meslek", "gu
 const VOCAB_B1 = [
 ["kavram", "Soyut Kavramlar", "în totalitate", "tümüyle", ""],
 ["kavram", "Soyut Kavramlar", "adâncime", "derinlik", "f, adâncimi"],
-["kavram", "Soyut Kavramlar", "anterioritate (f)", "öncelik (zamansal)", "f"],
+["kavram", "Soyut Kavramlar", "anterioritate", "öncelik (zamansal)", "f"],
 ["kavram", "Soyut Kavramlar", "aproape niciodată", "neredeyse hiç", ""],
 ["kavram", "Soyut Kavramlar", "capacitate", "kapasite, hacim", "f, capacități"],
 ["kavram", "Soyut Kavramlar", "câteodată", "bazen", "varyant: uneori"],
@@ -34,17 +34,17 @@ const VOCAB_B1 = [
 ["kavram", "Soyut Kavramlar", "distanță", "mesafe", "f, distanțe"],
 ["kavram", "Soyut Kavramlar", "facilitate", "kolaylık", "f, facilități"],
 ["kavram", "Soyut Kavramlar", "imitație", "taklit", "f, imitații"],
-["kavram", "Soyut Kavramlar", "metru pătrat (m)", "metrekare", "m"],
+["kavram", "Soyut Kavramlar", "metru pătrat", "metrekare", "m"],
 ["kavram", "Soyut Kavramlar", "necesitate", "gereklilik", "f, necesități"],
-["kavram", "Soyut Kavramlar", "opacitate (f)", "donukluk", "f"],
-["kavram", "Soyut Kavramlar", "oțel inoxidabil (n)", "paslanmaz çelik", "n"],
+["kavram", "Soyut Kavramlar", "opacitate", "donukluk", "f"],
+["kavram", "Soyut Kavramlar", "oțel inoxidabil", "paslanmaz çelik", "n"],
 ["kavram", "Soyut Kavramlar", "proprietate", "mülk, özellik", "f, proprietăți"],
-["kavram", "Soyut Kavramlar", "superlativ absolut (n)", "mutlak üstünlük derecesi", "n"],
-["kavram", "Soyut Kavramlar", "transluciditate (f)", "yarı saydamlık", "f"],
-["kavram", "Soyut Kavramlar", "transparență (f)", "saydamlık", "f"],
-["kavram", "Soyut Kavramlar", "vulgaritate (f)", "bayağılık", "f"],
+["kavram", "Soyut Kavramlar", "superlativ absolut", "mutlak üstünlük derecesi", "n"],
+["kavram", "Soyut Kavramlar", "transluciditate", "yarı saydamlık", "f"],
+["kavram", "Soyut Kavramlar", "transparență", "saydamlık", "f"],
+["kavram", "Soyut Kavramlar", "vulgaritate", "bayağılık", "f"],
 ["kavram", "Soyut Kavramlar", "condimentat", "baharatlı", ""],
-["kavram", "Soyut Kavramlar", "doime (f)", "yarım", "f"],
+["kavram", "Soyut Kavramlar", "doime", "yarım", "f"],
 ["kavram", "Soyut Kavramlar", "grosime", "kalınlık", "f, grosimi"],
 ["kavram", "Soyut Kavramlar", "impermeabil", "su geçirmez", ""],
 ["kavram", "Soyut Kavramlar", "irepetabil", "tekrarlanamaz", ""],
@@ -68,82 +68,82 @@ const VOCAB_B1 = [
 ["kavram", "Soyut Kavramlar", "cea mai mare parte", "büyük bölümü", ""],
 ["kavram", "Soyut Kavramlar", "ciudat", "tuhaf", ""],
 ["kavram", "Soyut Kavramlar", "de obicei", "genellikle", ""],
-["kavram", "Soyut Kavramlar", "decilitru (m)", "desilitre", "m"],
-["is", "İş ve Meslek", "asistență socială (f)", "sosyal yardım", "f"],
-["is", "İş ve Meslek", "jumătate de normă (f)", "yarı zamanlı", "f"],
-["is", "İş ve Meslek", "avocatură (f)", "avukatlık", "f"],
-["is", "İş ve Meslek", "carnet de asigurat (n)", "sigorta karnesi", "n"],
-["is", "İş ve Meslek", "colegialitate (f)", "meslektaşlık", "f"],
+["kavram", "Soyut Kavramlar", "decilitru", "desilitre", "m"],
+["is", "İş ve Meslek", "asistență socială", "sosyal yardım", "f"],
+["is", "İş ve Meslek", "jumătate de normă", "yarı zamanlı", "f"],
+["is", "İş ve Meslek", "avocatură", "avukatlık", "f"],
+["is", "İş ve Meslek", "carnet de asigurat", "sigorta karnesi", "n"],
+["is", "İş ve Meslek", "colegialitate", "meslektaşlık", "f"],
 ["is", "İş ve Meslek", "cotizație", "aidat", "f, cotizații"],
-["is", "İş ve Meslek", "diplomație (f)", "diplomasi", "f"],
+["is", "İş ve Meslek", "diplomație", "diplomasi", "f"],
 ["is", "İş ve Meslek", "economist", "ekonomist", "m, economiști"],
 ["is", "İş ve Meslek", "experiență", "deneyim", "f, experiențe"],
 ["is", "İş ve Meslek", "farmacist", "eczacı", "m, farmaciști"],
-["is", "İş ve Meslek", "horticultură (f)", "bahçecilik", "f"],
-["is", "İş ve Meslek", "impozit global (n)", "toplam gelir vergisi", "n"],
-["is", "İş ve Meslek", "impozit pe venit (n)", "gelir vergisi", "n"],
+["is", "İş ve Meslek", "horticultură", "bahçecilik", "f"],
+["is", "İş ve Meslek", "impozit global", "toplam gelir vergisi", "n"],
+["is", "İş ve Meslek", "impozit pe venit", "gelir vergisi", "n"],
 ["is", "İş ve Meslek", "indemnizație", "ödenek, tazminat", "f, indemnizații"],
 ["is", "İş ve Meslek", "investitor", "yatırımcı", "m, investitori"],
 ["is", "İş ve Meslek", "jurnalist", "gazeteci", "m, jurnaliști"],
-["is", "İş ve Meslek", "magistratură (f)", "yargı mesleği", "f"],
+["is", "İş ve Meslek", "magistratură", "yargı mesleği", "f"],
 ["is", "İş ve Meslek", "ore suplimentare (f pl.)", "fazla mesai", ""],
-["is", "İş ve Meslek", "pensie pentru limită de vârstă (f)", "yaşlılık emekliliği", "f"],
+["is", "İş ve Meslek", "pensie pentru limită de vârstă", "yaşlılık emekliliği", "f"],
 ["is", "İş ve Meslek", "polițist", "polis", "m, polițiști"],
-["is", "İş ve Meslek", "program flexibil (n)", "esnek çalışma saatleri", "n"],
+["is", "İş ve Meslek", "program flexibil", "esnek çalışma saatleri", "n"],
 ["is", "İş ve Meslek", "remunerație", "ücret", "f, remunerații"],
-["is", "İş ve Meslek", "siguranță (f)", "güvenlik, emniyet", "f"],
+["is", "İş ve Meslek", "siguranță", "güvenlik, emniyet", "f"],
 ["is", "İş ve Meslek", "specialist", "uzman", "m, specialiști"],
 ["is", "İş ve Meslek", "subvenție", "sübvansiyon", "f, subvenții"],
-["is", "İş ve Meslek", "artizanat (n)", "el sanatları", "n"],
+["is", "İş ve Meslek", "artizanat", "el sanatları", "n"],
 ["is", "İş ve Meslek", "funcție", "görev, unvan", "f, funcții"],
 ["is", "İş ve Meslek", "grevist", "grevci", "m, greviști"],
 ["is", "İş ve Meslek", "nerealizare", "başarısızlık", "f, nerealizări"],
 ["is", "İş ve Meslek", "neînțelegere", "anlaşmazlık", "f, neînțelegeri"],
 ["is", "İş ve Meslek", "periculos", "tehlikeli", ""],
-["is", "İş ve Meslek", "păstorit (n)", "çobanlık", "n"],
+["is", "İş ve Meslek", "păstorit", "çobanlık", "n"],
 ["is", "İş ve Meslek", "revendicare", "talep, hak arayışı", "f, revendicări"],
-["is", "İş ve Meslek", "secretariat (n)", "sekreterlik", "n"],
+["is", "İş ve Meslek", "secretariat", "sekreterlik", "n"],
 ["is", "İş ve Meslek", "tură", "vardiya", "f, ture"],
-["is", "İş ve Meslek", "vechime (f)", "kıdem", "f"],
+["is", "İş ve Meslek", "vechime", "kıdem", "f"],
 ["is", "İş ve Meslek", "a-și face datoria", "görevini yapmak", ""],
 ["is", "İş ve Meslek", "afiliat", "bağlı, üye", ""],
-["is", "İş ve Meslek", "ajutor de boală (n)", "hastalık yardımı", "n"],
+["is", "İş ve Meslek", "ajutor de boală", "hastalık yardımı", "n"],
 ["is", "İş ve Meslek", "ani de serviciu (m pl.)", "hizmet yılları", ""],
-["is", "İş ve Meslek", "asigurare medicală (f)", "sağlık sigortası", "f"],
+["is", "İş ve Meslek", "asigurare medicală", "sağlık sigortası", "f"],
 ["is", "İş ve Meslek", "asigurare socială", "sosyal sigorta", "f, asigurări"],
 ["is", "İş ve Meslek", "bonuri de masă (n pl.)", "yemek fişi", ""],
 ["is", "İş ve Meslek", "cabinet medical", "muayenehane", "n, cabinete"],
 ["is", "İş ve Meslek", "conflict de muncă", "iş uyuşmazlığı", "n, conflicte"],
-["is", "İş ve Meslek", "contract de muncă (n)", "iş sözleşmesi", "n"],
-["is", "İş ve Meslek", "curs de perfecționare (n)", "uzmanlaşma kursu", "n"],
+["is", "İş ve Meslek", "contract de muncă", "iş sözleşmesi", "n"],
+["is", "İş ve Meslek", "curs de perfecționare", "uzmanlaşma kursu", "n"],
 ["is", "İş ve Meslek", "director general", "genel müdür", "varyant: adjunct"],
-["is", "İş ve Meslek", "formare profesională (f)", "mesleki eğitim", "f"],
-["is", "İş ve Meslek", "mediu toxic (n)", "zehirli ortam", "n"],
-["is", "İş ve Meslek", "normă întreagă (f)", "tam zamanlı", "f"],
+["is", "İş ve Meslek", "formare profesională", "mesleki eğitim", "f"],
+["is", "İş ve Meslek", "mediu toxic", "zehirli ortam", "n"],
+["is", "İş ve Meslek", "normă întreagă", "tam zamanlı", "f"],
 ["is", "İş ve Meslek", "oficiu poștal", "postane", "n, oficii"],
-["is", "İş ve Meslek", "pescuit (n)", "balıkçılık", "n"],
-["guncel", "Güncel Olaylar", "lovitură de stat (f)", "darbe", "f"],
-["guncel", "Güncel Olaylar", "situație conflictuală (f)", "çatışmalı durum", "f"],
-["guncel", "Güncel Olaylar", "societate de consum (f)", "tüketim toplumu", "f"],
+["is", "İş ve Meslek", "pescuit", "balıkçılık", "n"],
+["guncel", "Güncel Olaylar", "lovitură de stat", "darbe", "f"],
+["guncel", "Güncel Olaylar", "situație conflictuală", "çatışmalı durum", "f"],
+["guncel", "Güncel Olaylar", "societate de consum", "tüketim toplumu", "f"],
 ["guncel", "Güncel Olaylar", "stat democratic", "demokratik devlet", "n, state"],
 ["guncel", "Güncel Olaylar", "tratat bilateral", "ikili antlaşma", "n, tratate"],
 ["guncel", "Güncel Olaylar", "țări dezvoltate", "gelişmiş ülkeler", "varyant: industrializate"],
 ["guncel", "Güncel Olaylar", "țări subdezvoltate", "az gelişmiş ülkeler", "varyant: înapoiate"],
-["guncel", "Güncel Olaylar", "Orientul Apropiat (n)", "Yakın Doğu", "n"],
+["guncel", "Güncel Olaylar", "Orientul Apropiat", "Yakın Doğu", "n"],
 ["guncel", "Güncel Olaylar", "administrație", "yönetim", "f, administrații"],
 ["guncel", "Güncel Olaylar", "arme nucleare (f pl.)", "nükleer silahlar", ""],
-["guncel", "Güncel Olaylar", "capitalism (n)", "kapitalizm", "n"],
+["guncel", "Güncel Olaylar", "capitalism", "kapitalizm", "n"],
 ["guncel", "Güncel Olaylar", "coaliție", "koalisyon", "f, coaliții"],
-["guncel", "Güncel Olaylar", "comunism (n)", "komünizm", "n"],
-["guncel", "Güncel Olaylar", "concurență (f)", "rekabet", "f"],
+["guncel", "Güncel Olaylar", "comunism", "komünizm", "n"],
+["guncel", "Güncel Olaylar", "concurență", "rekabet", "f"],
 ["guncel", "Güncel Olaylar", "constituție", "anayasa", "f, constituții"],
 ["guncel", "Güncel Olaylar", "convenție", "sözleşme, konvansiyon", "f, convenții"],
-["guncel", "Güncel Olaylar", "copil abandonat (m)", "terk edilmiş çocuk", "m"],
-["guncel", "Güncel Olaylar", "corupție (f)", "yolsuzluk", "f"],
+["guncel", "Güncel Olaylar", "copil abandonat", "terk edilmiş çocuk", "m"],
+["guncel", "Güncel Olaylar", "corupție", "yolsuzluk", "f"],
 ["guncel", "Güncel Olaylar", "democrație", "demokrasi", "f, democrații"],
 ["guncel", "Güncel Olaylar", "ecologist", "çevreci, yeşil", ""],
-["guncel", "Güncel Olaylar", "gravitate (f)", "ciddiyet, vahamet", "f"],
-["guncel", "Güncel Olaylar", "inflație (f)", "enflasyon", "f"],
+["guncel", "Güncel Olaylar", "gravitate", "ciddiyet, vahamet", "f"],
+["guncel", "Güncel Olaylar", "inflație", "enflasyon", "f"],
 ["guncel", "Güncel Olaylar", "influență", "etki, nüfuz", "f, influențe"],
 ["guncel", "Güncel Olaylar", "libertate", "özgürlük", "f, libertăți"],
 ["guncel", "Güncel Olaylar", "majoritate", "çoğunluk", "f, majorități"],
@@ -152,13 +152,13 @@ const VOCAB_B1 = [
 ["guncel", "Güncel Olaylar", "parlament", "parlamento", "n, parlamente"],
 ["guncel", "Güncel Olaylar", "populație", "nüfus", "f, populații"],
 ["guncel", "Güncel Olaylar", "revoluție", "devrim", "f, revoluții"],
-["guncel", "Güncel Olaylar", "socialism (n)", "sosyalizm", "n"],
+["guncel", "Güncel Olaylar", "socialism", "sosyalizm", "n"],
 ["guncel", "Güncel Olaylar", "socialist", "sosyalist", ""],
 ["guncel", "Güncel Olaylar", "societate", "toplum", "f, societăți"],
-["guncel", "Güncel Olaylar", "solidaritate (f)", "dayanışma", "f"],
-["guncel", "Güncel Olaylar", "terorism (n)", "terörizm", "n"],
+["guncel", "Güncel Olaylar", "solidaritate", "dayanışma", "f"],
+["guncel", "Güncel Olaylar", "terorism", "terörizm", "n"],
 ["guncel", "Güncel Olaylar", "tranziție", "geçiş dönemi", "f, tranziții"],
-["guncel", "Güncel Olaylar", "aviație (f)", "havacılık", "f"],
+["guncel", "Güncel Olaylar", "aviație", "havacılık", "f"],
 ["guncel", "Güncel Olaylar", "bogăție", "zenginlik", "f, bogății"],
 ["guncel", "Güncel Olaylar", "democrat-creștin", "Hristiyan demokrat", ""],
 ["guncel", "Güncel Olaylar", "dezbatere", "tartışma, müzakere", "f, dezbateri"],
@@ -169,12 +169,12 @@ const VOCAB_B1 = [
 ["guncel", "Güncel Olaylar", "noutate", "yenilik, haber", "f, noutăți"],
 ["guncel", "Güncel Olaylar", "răscumpărare", "fidye", "f, răscumpărări"],
 ["hizmet", "Hizmetler", "centură de siguranță", "emniyet kemeri", "f, centuri"],
-["hizmet", "Hizmetler", "contor kilometraj (n)", "kilometre sayacı", "n"],
-["hizmet", "Hizmetler", "poliție economică (f)", "ekonomik suçlar polisi", "f"],
-["hizmet", "Hizmetler", "poliție rutieră (f)", "trafik polisi", "f"],
+["hizmet", "Hizmetler", "contor kilometraj", "kilometre sayacı", "n"],
+["hizmet", "Hizmetler", "poliție economică", "ekonomik suçlar polisi", "f"],
+["hizmet", "Hizmetler", "poliție rutieră", "trafik polisi", "f"],
 ["hizmet", "Hizmetler", "post de poliție", "karakol", "n, posturi"],
 ["hizmet", "Hizmetler", "țeavă de eșapament", "egzoz borusu", "f, țevi"],
-["hizmet", "Hizmetler", "certificat de înmatriculare (n)", "ruhsat", "n"],
+["hizmet", "Hizmetler", "certificat de înmatriculare", "ruhsat", "n"],
 ["hizmet", "Hizmetler", "corespondență", "yazışma", "f, corespondențe"],
 ["hizmet", "Hizmetler", "declarație", "beyan", "f, declarații"],
 ["hizmet", "Hizmetler", "expeditor", "gönderen", "m, expeditori"],
@@ -183,157 +183,157 @@ const VOCAB_B1 = [
 ["hizmet", "Hizmetler", "portbagaj", "bagaj", "n, portbagaje"],
 ["hizmet", "Hizmetler", "receptor", "ahize", "n, receptoare"],
 ["hizmet", "Hizmetler", "reparație", "tamir", "f, reparații"],
-["hizmet", "Hizmetler", "roată de rezervă (f)", "yedek lastik", "f"],
+["hizmet", "Hizmetler", "roată de rezervă", "yedek lastik", "f"],
 ["hizmet", "Hizmetler", "telegrafist", "telgrafçı", "m, telegrafiști"],
 ["hizmet", "Hizmetler", "crimă", "suç, cinayet", "f, crime"],
 ["hizmet", "Hizmetler", "accident rutier", "trafik kazası", "n, accidente"],
 ["hizmet", "Hizmetler", "apel telefonic", "telefon araması", "n, apeluri"],
 ["hizmet", "Hizmetler", "apel urban", "şehir içi arama", "varyant: interurban / internațional"],
-["hizmet", "Hizmetler", "asigurare obligatorie auto (f)", "zorunlu trafik sigortası", "f"],
-["hizmet", "Hizmetler", "benzină fără plumb (f)", "kurşunsuz benzin", "f"],
-["hizmet", "Hizmetler", "birou de schimb valutar (n)", "döviz bürosu", "n"],
+["hizmet", "Hizmetler", "asigurare obligatorie auto", "zorunlu trafik sigortası", "f"],
+["hizmet", "Hizmetler", "benzină fără plumb", "kurşunsuz benzin", "f"],
+["hizmet", "Hizmetler", "birou de schimb valutar", "döviz bürosu", "n"],
 ["hizmet", "Hizmetler", "cabină telefonică", "telefon kulübesi", "f, cabine"],
 ["hizmet", "Hizmetler", "card bancar", "banka kartı", "n, carduri"],
-["hizmet", "Hizmetler", "carnet de cecuri (n)", "çek defteri", "n"],
+["hizmet", "Hizmetler", "carnet de cecuri", "çek defteri", "n"],
 ["hizmet", "Hizmetler", "carte de credit", "kredi kartı", "f, cărți"],
-["hizmet", "Hizmetler", "carte de telefon (f)", "telefon rehberi", "f"],
+["hizmet", "Hizmetler", "carte de telefon", "telefon rehberi", "f"],
 ["hizmet", "Hizmetler", "cartelă telefonică", "telefon kartı", "f, cartele"],
-["hizmet", "Hizmetler", "cec de călătorie (n)", "seyahat çeki", "n"],
-["hizmet", "Hizmetler", "cod secret (n)", "şifre", "n"],
+["hizmet", "Hizmetler", "cec de călătorie", "seyahat çeki", "n"],
+["hizmet", "Hizmetler", "cod secret", "şifre", "n"],
 ["hizmet", "Hizmetler", "cont în valută", "döviz hesabı", "n, conturi"],
 ["seyahat", "Seyahat/Ulaşım", "agenție de voiaj", "seyahat acentesi", "f, agenții"],
 ["seyahat", "Seyahat/Ulaşım", "bagaj de mână", "el bagajı", "n, bagaje"],
 ["seyahat", "Seyahat/Ulaşım", "blocaj de circulație", "trafik tıkanıklığı", "n, blocaje"],
 ["seyahat", "Seyahat/Ulaşım", "clasa turist", "turist sınıfı", ""],
-["seyahat", "Seyahat/Ulaşım", "declarație de venituri (f)", "gelir beyanı", "f"],
-["seyahat", "Seyahat/Ulaşım", "declarație vamală (f)", "gümrük beyannamesi", "f"],
-["seyahat", "Seyahat/Ulaşım", "drum ocolitor (n)", "dolambaçlı yol", "n"],
-["seyahat", "Seyahat/Ulaşım", "invitație oficială (f)", "resmî davetiye", "f"],
-["seyahat", "Seyahat/Ulaşım", "oficiu de turism (n)", "turizm bürosu", "n"],
+["seyahat", "Seyahat/Ulaşım", "declarație de venituri", "gelir beyanı", "f"],
+["seyahat", "Seyahat/Ulaşım", "declarație vamală", "gümrük beyannamesi", "f"],
+["seyahat", "Seyahat/Ulaşım", "drum ocolitor", "dolambaçlı yol", "n"],
+["seyahat", "Seyahat/Ulaşım", "invitație oficială", "resmî davetiye", "f"],
+["seyahat", "Seyahat/Ulaşım", "oficiu de turism", "turizm bürosu", "n"],
 ["seyahat", "Seyahat/Ulaşım", "panou de circulație", "trafik levhası", "n, panouri"],
-["seyahat", "Seyahat/Ulaşım", "scrisoare de invitație (f)", "davet mektubu", "f"],
-["seyahat", "Seyahat/Ulaşım", "supliment de viteză (n)", "hız farkı ücreti", "n"],
-["seyahat", "Seyahat/Ulaşım", "valabilitate redusă (f)", "kısıtlı geçerlilik", "f"],
+["seyahat", "Seyahat/Ulaşım", "scrisoare de invitație", "davet mektubu", "f"],
+["seyahat", "Seyahat/Ulaşım", "supliment de viteză", "hız farkı ücreti", "n"],
+["seyahat", "Seyahat/Ulaşım", "valabilitate redusă", "kısıtlı geçerlilik", "f"],
 ["seyahat", "Seyahat/Ulaşım", "în străinătate", "yurt dışında", ""],
 ["seyahat", "Seyahat/Ulaşım", "aglomerație", "izdiham", "f, aglomerații"],
 ["seyahat", "Seyahat/Ulaşım", "autoturism", "binek otomobil", "n, autoturisme"],
 ["seyahat", "Seyahat/Ulaşım", "biciclist", "bisikletli", "m, bicicliști"],
 ["seyahat", "Seyahat/Ulaşım", "ceferist", "demiryolu çalışanı", "m, ceferiști"],
 ["seyahat", "Seyahat/Ulaşım", "contravenție", "kabahat, idari para cezası", "f, contravenții"],
-["seyahat", "Seyahat/Ulaşım", "drum accidentat (n)", "bozuk yol", "n"],
+["seyahat", "Seyahat/Ulaşım", "drum accidentat", "bozuk yol", "n"],
 ["seyahat", "Seyahat/Ulaşım", "indicații de orientare (f pl.)", "yön tarifi", ""],
 ["seyahat", "Seyahat/Ulaşım", "legătură", "aktarma, bağlantı", "f, legături"],
 ["seyahat", "Seyahat/Ulaşım", "motociclist", "motosikletli", "m, motocicliști"],
 ["seyahat", "Seyahat/Ulaşım", "obositor", "yorucu", ""],
 ["seyahat", "Seyahat/Ulaşım", "odihnitor", "dinlendirici", ""],
 ["seyahat", "Seyahat/Ulaşım", "rezidență", "ikametgâh", "f, rezidențe"],
-["seyahat", "Seyahat/Ulaşım", "sală de așteptare (f)", "bekleme salonu", "f"],
-["seyahat", "Seyahat/Ulaşım", "sală de îmbarcare (f)", "biniş salonu", "f"],
+["seyahat", "Seyahat/Ulaşım", "sală de așteptare", "bekleme salonu", "f"],
+["seyahat", "Seyahat/Ulaşım", "sală de îmbarcare", "biniş salonu", "f"],
 ["seyahat", "Seyahat/Ulaşım", "tren accelerat", "hızlandırılmış tren (rapid'den yavaş)", "varyant: personal / rapid"],
-["seyahat", "Seyahat/Ulaşım", "vagon restaurant (n)", "yemekli vagon", "n"],
-["konut", "Konut ve Ev Yaşamı", "proprietate de stat (f)", "devlet mülkiyeti", "f"],
+["seyahat", "Seyahat/Ulaşım", "vagon restaurant", "yemekli vagon", "n"],
+["konut", "Konut ve Ev Yaşamı", "proprietate de stat", "devlet mülkiyeti", "f"],
 ["konut", "Konut ve Ev Yaşamı", "cuptor cu microunde", "mikrodalga fırın", "n, cuptoare"],
 ["konut", "Konut ve Ev Yaşamı", "instalație de gaz", "gaz tesisatı", "f, instalații"],
-["konut", "Konut ve Ev Yaşamı", "pictură în ulei (f)", "yağlı boya resim", "f"],
-["konut", "Konut ve Ev Yaşamı", "proprietate particulară (f)", "özel mülkiyet", "f"],
+["konut", "Konut ve Ev Yaşamı", "pictură în ulei", "yağlı boya resim", "f"],
+["konut", "Konut ve Ev Yaşamı", "proprietate particulară", "özel mülkiyet", "f"],
 ["konut", "Konut ve Ev Yaşamı", "taxă de salubritate", "temizlik vergisi", "f, taxe"],
 ["konut", "Konut ve Ev Yaşamı", "amplasat", "konumlandırılmış", "varyant: situat"],
 ["konut", "Konut ve Ev Yaşamı", "congelator", "derin dondurucu", "n, congelatoare"],
 ["konut", "Konut ve Ev Yaşamı", "cuvertură", "yatak örtüsü", "f, cuverturi"],
 ["konut", "Konut ve Ev Yaşamı", "dotat", "donanımlı", "varyant: echipat"],
 ["konut", "Konut ve Ev Yaşamı", "haine de pat (f pl.)", "yatak takımı", ""],
-["konut", "Konut ve Ev Yaşamı", "mașină de spălat rufe (f)", "çamaşır makinesi", "f"],
-["konut", "Konut ve Ev Yaşamı", "mașină de spălat vase (f)", "bulaşık makinesi", "f"],
+["konut", "Konut ve Ev Yaşamı", "mașină de spălat rufe", "çamaşır makinesi", "f"],
+["konut", "Konut ve Ev Yaşamı", "mașină de spălat vase", "bulaşık makinesi", "f"],
 ["konut", "Konut ve Ev Yaşamı", "nedotat", "donanımsız", "varyant: neechipat"],
 ["konut", "Konut ve Ev Yaşamı", "întrerupător", "elektrik düğmesi", "n, întrerupătoare"],
 ["konut", "Konut ve Ev Yaşamı", "canalizare", "kanalizasyon", "f, canalizări"],
 ["konut", "Konut ve Ev Yaşamı", "contor", "sayaç", "n, contoare"],
 ["konut", "Konut ve Ev Yaşamı", "garaj", "garaj", "n, garaje"],
-["konut", "Konut ve Ev Yaşamı", "păcură (f)", "fuel oil, akaryakıt", "f"],
+["konut", "Konut ve Ev Yaşamı", "păcură", "fuel oil, akaryakıt", "f"],
 ["konut", "Konut ve Ev Yaşamı", "rezonabil", "makul", ""],
 ["konut", "Konut ve Ev Yaşamı", "încăpere", "oda, mekân", "f, încăperi"],
-["konut", "Konut ve Ev Yaşamı", "cameră de zi (f)", "oturma odası", "f"],
-["konut", "Konut ve Ev Yaşamı", "centrală termică (f)", "kombi", "f"],
+["konut", "Konut ve Ev Yaşamı", "cameră de zi", "oturma odası", "f"],
+["konut", "Konut ve Ev Yaşamı", "centrală termică", "kombi", "f"],
 ["konut", "Konut ve Ev Yaşamı", "coș de fum", "baca", "n, coșuri"],
 ["konut", "Konut ve Ev Yaşamı", "cuțit cu zimți", "tırtıklı bıçak", "n, cuțite"],
 ["konut", "Konut ve Ev Yaşamı", "cămară de alimente", "kiler", "f, cămări"],
-["konut", "Konut ve Ev Yaşamı", "cămin de bătrâni (n)", "huzurevi", "n"],
+["konut", "Konut ve Ev Yaşamı", "cămin de bătrâni", "huzurevi", "n"],
 ["konut", "Konut ve Ev Yaşamı", "cămin studențesc", "öğrenci yurdu", "n, cămine"],
 ["konut", "Konut ve Ev Yaşamı", "farfurie adâncă", "çorba tabağı", "f, farfurii"],
-["konut", "Konut ve Ev Yaşamı", "farfurie întinsă (f)", "düz tabak", "f"],
+["konut", "Konut ve Ev Yaşamı", "farfurie întinsă", "düz tabak", "f"],
 ["konut", "Konut ve Ev Yaşamı", "față de masă", "masa örtüsü", "f, fețe"],
-["konut", "Konut ve Ev Yaşamı", "grădină de legume (f)", "sebze bahçesi", "f"],
-["konut", "Konut ve Ev Yaşamı", "mobilă stil (f)", "stil mobilya", "f"],
+["konut", "Konut ve Ev Yaşamı", "grădină de legume", "sebze bahçesi", "f"],
+["konut", "Konut ve Ev Yaşamı", "mobilă stil", "stil mobilya", "f"],
 ["konut", "Konut ve Ev Yaşamı", "priză electrică", "priz", "f, prize"],
-["konut", "Konut ve Ev Yaşamı", "încălzire centrală (f)", "merkezi ısıtma", "f"],
+["konut", "Konut ve Ev Yaşamı", "încălzire centrală", "merkezi ısıtma", "f"],
 ["konut", "Konut ve Ev Yaşamı", "acoperiș", "çatı", "n, acoperișuri"],
 ["alisveris", "Alışveriş/Ticaret", "cartuș de cerneală", "mürekkep kartuşu", "n, cartușe"],
-["alisveris", "Alışveriş/Ticaret", "carne tocată (f)", "kıyma", "f"],
+["alisveris", "Alışveriş/Ticaret", "carne tocată", "kıyma", "f"],
 ["alisveris", "Alışveriş/Ticaret", "cerneală", "mürekkep", "f, cerneluri"],
 ["alisveris", "Alışveriş/Ticaret", "chitanță", "makbuz", "f, chitanțe"],
 ["alisveris", "Alışveriş/Ticaret", "garanție", "garanti", "f, garanții"],
 ["alisveris", "Alışveriş/Ticaret", "gratuit", "ücretsiz", "varyant: gratis"],
-["alisveris", "Alışveriş/Ticaret", "pastă de corectat (f)", "daksil", "f"],
-["alisveris", "Alışveriş/Ticaret", "pastă de lipit (f)", "tutkal", "f"],
+["alisveris", "Alışveriş/Ticaret", "pastă de corectat", "daksil", "f"],
+["alisveris", "Alışveriş/Ticaret", "pastă de lipit", "tutkal", "f"],
 ["alisveris", "Alışveriş/Ticaret", "supozitor", "fitil", "n, supozitoare"],
-["alisveris", "Alışveriş/Ticaret", "autoservire (f)", "self servis mağaza", "f"],
+["alisveris", "Alışveriş/Ticaret", "autoservire", "self servis mağaza", "f"],
 ["alisveris", "Alışveriş/Ticaret", "centură", "kemer", "f, centuri"],
 ["alisveris", "Alışveriş/Ticaret", "factură", "fatura", "f, facturi"],
 ["alisveris", "Alışveriş/Ticaret", "lactate (n pl.)", "süt ürünleri (dükkânı)", ""],
 ["alisveris", "Alışveriş/Ticaret", "reducere", "indirim", "f, reduceri"],
 ["alisveris", "Alışveriş/Ticaret", "a-i veni bine", "üzerine oturmak (giysi)", ""],
 ["alisveris", "Alışveriş/Ticaret", "afumat", "füme", ""],
-["alisveris", "Alışveriş/Ticaret", "balon (n)", "trençkot", "n"],
-["alisveris", "Alışveriş/Ticaret", "bască (f)", "kasket", "f"],
-["alisveris", "Alışveriş/Ticaret", "cabină de probă (f)", "deneme kabini", "f"],
+["alisveris", "Alışveriş/Ticaret", "balon", "trençkot", "n"],
+["alisveris", "Alışveriş/Ticaret", "bască", "kasket", "f"],
+["alisveris", "Alışveriş/Ticaret", "cabină de probă", "deneme kabini", "f"],
 ["alisveris", "Alışveriş/Ticaret", "centru comercial", "alışveriş merkezi", "n, centre"],
-["alisveris", "Alışveriş/Ticaret", "cămașă de noapte (f)", "gecelik", "f"],
+["alisveris", "Alışveriş/Ticaret", "cămașă de noapte", "gecelik", "f"],
 ["alisveris", "Alışveriş/Ticaret", "folie de plastic", "plastik folyo", "f, folii"],
-["alisveris", "Alışveriş/Ticaret", "gumă (f)", "silgi", "f"],
-["alisveris", "Alışveriş/Ticaret", "hârtie milimetrică (f)", "milimetrik kâğıt", "f"],
-["alisveris", "Alışveriş/Ticaret", "magazin alimentar (n)", "market, bakkal", "n"],
+["alisveris", "Alışveriş/Ticaret", "gumă", "silgi", "f"],
+["alisveris", "Alışveriş/Ticaret", "hârtie milimetrică", "milimetrik kâğıt", "f"],
+["alisveris", "Alışveriş/Ticaret", "magazin alimentar", "market, bakkal", "n"],
 ["alisveris", "Alışveriş/Ticaret", "magazin universal", "büyük mağaza", "n, magazine"],
 ["alisveris", "Alışveriş/Ticaret", "papuci de casă (m pl.)", "terlik", ""],
 ["alisveris", "Alışveriş/Ticaret", "preț per bucată", "birim fiyat", "n, prețuri"],
-["alisveris", "Alışveriş/Ticaret", "preț redus (n)", "indirimli fiyat", "n"],
+["alisveris", "Alışveriş/Ticaret", "preț redus", "indirimli fiyat", "n"],
 ["alisveris", "Alışveriş/Ticaret", "pălărie de pai", "hasır şapka", "f, pălării"],
-["alisveris", "Alışveriş/Ticaret", "seringă de unică folosință (f)", "tek kullanımlık şırınga", "f"],
-["alisveris", "Alışveriş/Ticaret", "vânat (n)", "av eti", "n"],
-["alisveris", "Alışveriş/Ticaret", "vânzător ambulant (m)", "seyyar satıcı", "m"],
-["alisveris", "Alışveriş/Ticaret", "țigară de foi (f)", "puro", "f"],
+["alisveris", "Alışveriş/Ticaret", "seringă de unică folosință", "tek kullanımlık şırınga", "f"],
+["alisveris", "Alışveriş/Ticaret", "vânat", "av eti", "n"],
+["alisveris", "Alışveriş/Ticaret", "vânzător ambulant", "seyyar satıcı", "m"],
+["alisveris", "Alışveriş/Ticaret", "țigară de foi", "puro", "f"],
 ["alisveris", "Alışveriş/Ticaret", "alimentară", "bakkal", "f, alimentare"],
 ["alisveris", "Alışveriş/Ticaret", "bascheți (m pl.)", "basketbol ayakkabısı", ""],
 ["alisveris", "Alışveriş/Ticaret", "biblioraft", "klasör", "n, bibliorafturi"],
 ["alisveris", "Alışveriş/Ticaret", "bijuterie", "mücevher, takı", "f, bijuterii"],
-["saglik", "Sağlık ve Hijyen", "asistență medicală (f)", "tıbbi bakım", "f"],
-["saglik", "Sağlık ve Hijyen", "bună dispoziție (f)", "keyifli hâl", "f"],
+["saglik", "Sağlık ve Hijyen", "asistență medicală", "tıbbi bakım", "f"],
+["saglik", "Sağlık ve Hijyen", "bună dispoziție", "keyifli hâl", "f"],
 ["saglik", "Sağlık ve Hijyen", "foaie de observație", "gözlem kâğıdı", "f, foi"],
-["saglik", "Sağlık ve Hijyen", "hipertensiune arterială (f)", "yüksek tansiyon", "f"],
+["saglik", "Sağlık ve Hijyen", "hipertensiune arterială", "yüksek tansiyon", "f"],
 ["saglik", "Sağlık ve Hijyen", "laborator de analize", "tahlil laboratuvarı", "n, laboratoare"],
-["saglik", "Sağlık ve Hijyen", "spital de urgență (n)", "acil hastanesi", "n"],
-["saglik", "Sağlık ve Hijyen", "tinctură de iod (f)", "tentürdiyot", "f"],
+["saglik", "Sağlık ve Hijyen", "spital de urgență", "acil hastanesi", "n"],
+["saglik", "Sağlık ve Hijyen", "tinctură de iod", "tentürdiyot", "f"],
 ["saglik", "Sağlık ve Hijyen", "uscător de păr", "saç kurutma makinesi", "n, uscătoare"],
 ["saglik", "Sağlık ve Hijyen", "ambulanță", "ambulans", "f, ambulanțe"],
-["saglik", "Sağlık ve Hijyen", "apă oxigenată (f)", "oksijenli su", "f"],
-["saglik", "Sağlık ve Hijyen", "constipație (f)", "kabızlık", "f"],
+["saglik", "Sağlık ve Hijyen", "apă oxigenată", "oksijenli su", "f"],
+["saglik", "Sağlık ve Hijyen", "constipație", "kabızlık", "f"],
 ["saglik", "Sağlık ve Hijyen", "consultație", "muayene", "f, consultații"],
-["saglik", "Sağlık ve Hijyen", "febrilitate (f)", "ateşli hâl", "f"],
+["saglik", "Sağlık ve Hijyen", "febrilitate", "ateşli hâl", "f"],
 ["saglik", "Sağlık ve Hijyen", "fractură", "kırık", "f, fracturi"],
-["saglik", "Sağlık ve Hijyen", "graviditate (f)", "gebelik", "f"],
-["saglik", "Sağlık ve Hijyen", "halat de baie (n)", "bornoz", "n"],
+["saglik", "Sağlık ve Hijyen", "graviditate", "gebelik", "f"],
+["saglik", "Sağlık ve Hijyen", "halat de baie", "bornoz", "n"],
 ["saglik", "Sağlık ve Hijyen", "indispoziție", "rahatsızlık, keyifsizlik", "f, indispoziții"],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "artist", "sanatçı", "varyant: artistă"],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "dansator", "dansçı", "varyant: dansatoare"],
-["bosvakit", "Özel Yaşam/Boş Zaman", "ieșire de urgență (f)", "acil çıkış", "f"],
+["bosvakit", "Özel Yaşam/Boş Zaman", "ieșire de urgență", "acil çıkış", "f"],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "pistă de atletism", "atletizm pisti", "f, piste"],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "roman polițist", "polisiye roman", "varyant: de spionaj / de groază"],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "asociație", "dernek", "f, asociații"],
-["bosvakit", "Özel Yaşam/Boş Zaman", "atletism (n)", "atletizm", "n"],
-["bosvakit", "Özel Yaşam/Boş Zaman", "egalitate (f)", "beraberlik", "f"],
+["bosvakit", "Özel Yaşam/Boş Zaman", "atletism", "atletizm", "n"],
+["bosvakit", "Özel Yaşam/Boş Zaman", "egalitate", "beraberlik", "f"],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "formație", "müzik grubu", "f, formații"],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "personaj", "karakter", "n, personaje"],
-["bosvakit", "Özel Yaşam/Boş Zaman", "publicitate (f)", "reklam", "f"],
-["bosvakit", "Özel Yaşam/Boş Zaman", "radio portativ (n)", "taşınabilir radyo", "n"],
+["bosvakit", "Özel Yaşam/Boş Zaman", "publicitate", "reklam", "f"],
+["bosvakit", "Özel Yaşam/Boş Zaman", "radio portativ", "taşınabilir radyo", "n"],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "reportaj", "röportaj, haber", "n, reportaje"],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "reprezentație", "temsil, gösteri", "f, reprezentații"],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "sculptură", "heykel sanatı", "f, sculpturi"],
@@ -342,14 +342,14 @@ const VOCAB_B1 = [
 ["bosvakit", "Özel Yaşam/Boş Zaman", "povestire", "hikâye", "f, povestiri"],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "remarcabil", "kayda değer", ""],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "solist", "solist", "m, soliști"],
-["bosvakit", "Özel Yaşam/Boş Zaman", "tricotat (n)", "örgü örme", "n"],
+["bosvakit", "Özel Yaşam/Boş Zaman", "tricotat", "örgü örme", "n"],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "înfrângere", "yenilgi", "f, înfrângeri"],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "a-l interesa", "ilgisini çekmek", ""],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "a-l pasiona", "tutkusu olmak", ""],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "agitat", "hareketli, telaşlı", ""],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "arte plastice (f pl.)", "plastik sanatlar", ""],
 ["bosvakit", "Özel Yaşam/Boş Zaman", "balerin", "balet", "varyant: balerină"],
-["bosvakit", "Özel Yaşam/Boş Zaman", "balul bobocilor (n)", "yeni öğrenci balosu", "n"],
+["bosvakit", "Özel Yaşam/Boş Zaman", "balul bobocilor", "yeni öğrenci balosu", "n"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "lipsit de personalitate", "kişiliksiz", ""],
 ["kimlik", "Kimlik ve Kişisel Tanım", "budist", "Budist", "varyant: budism"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "buletin de identitate", "kimlik kartı", "n, buletine"],
@@ -358,13 +358,13 @@ const VOCAB_B1 = [
 ["kimlik", "Kimlik ve Kişisel Tanım", "mozaic", "Musevi", "varyant: iudaism"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "ocupație actuală", "mevcut meslek", "f, ocupații"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "protestant", "Protestan", "varyant: protestantism"],
-["kimlik", "Kimlik ve Kişisel Tanım", "situație familială (f)", "medeni durum", "f"],
+["kimlik", "Kimlik ve Kişisel Tanım", "situație familială", "medeni durum", "f"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "aparență", "dış görünüş", "f, aparențe"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "document", "doküman, belge", "n, documente"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "greutate", "kilo, ağırlık", "f, greutăți"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "identitate", "kimlik", "f, identități"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "instituție", "kurum", "f, instituții"],
-["kimlik", "Kimlik ve Kişisel Tanım", "islamism (n)", "İslam", "n"],
+["kimlik", "Kimlik ve Kişisel Tanım", "islamism", "İslam", "n"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "legitimație", "kimlik belgesi, giriş kartı", "f, legitimații"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "personalitate", "kişilik", "f, personalități"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "plictisitor", "sıkıcı", ""],
@@ -373,7 +373,7 @@ const VOCAB_B1 = [
 ["kimlik", "Kimlik ve Kişisel Tanım", "îngrozitor", "dehşet verici", ""],
 ["kimlik", "Kimlik ve Kişisel Tanım", "înălțime", "boy", "f, înălțimi"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "agreabil", "hoş, sevimli", ""],
-["kimlik", "Kimlik ve Kişisel Tanım", "ateism (n)", "ateizm", "n"],
+["kimlik", "Kimlik ve Kişisel Tanım", "ateism", "ateizm", "n"],
 ["kimlik", "Kimlik ve Kişisel Tanım", "despărțit", "ayrılmış", ""],
 ["kimlik", "Kimlik ve Kişisel Tanım", "dezagreabil", "tatsız, itici", ""],
 ["kimlik", "Kimlik ve Kişisel Tanım", "măritată", "evli (kadın için)", ""],
@@ -383,7 +383,7 @@ const VOCAB_B1 = [
 ["iliski", "Toplumsal İlişkiler", "conversație", "sohbet", "f, conversații"],
 ["iliski", "Toplumsal İlişkiler", "discuție", "tartışma, konuşma", "f, discuții"],
 ["iliski", "Toplumsal İlişkiler", "distracție", "eğlence", "f, distracții"],
-["iliski", "Toplumsal İlişkiler", "ospitalitate (f)", "misafirperverlik", "f"],
+["iliski", "Toplumsal İlişkiler", "ospitalitate", "misafirperverlik", "f"],
 ["iliski", "Toplumsal İlişkiler", "despărțire", "ayrılık", "f, despărțiri"],
 ["iliski", "Toplumsal İlişkiler", "imposibil", "imkânsız", ""],
 ["iliski", "Toplumsal İlişkiler", "îndrăgostit", "âşık", ""],
@@ -398,59 +398,59 @@ const VOCAB_B1 = [
 ["iliski", "Toplumsal İlişkiler", "partener", "ortak, partner", "m, parteneri"],
 ["iliski", "Toplumsal İlişkiler", "prietenie", "dostluk", "f, prietenii"],
 ["egitim", "Eğitim", "educator", "anaokulu öğretmeni", "varyant: educatoare"],
-["egitim", "Eğitim", "formație școlară (f)", "okul eğitimi/formasyonu", "f"],
-["egitim", "Eğitim", "învățământ la distanță (n)", "uzaktan eğitim", "n"],
+["egitim", "Eğitim", "formație școlară", "okul eğitimi/formasyonu", "f"],
+["egitim", "Eğitim", "învățământ la distanță", "uzaktan eğitim", "n"],
 ["egitim", "Eğitim", "învățător", "ilkokul öğretmeni", "varyant: învățătoare"],
-["egitim", "Eğitim", "bursă de merit (f)", "başarı bursu", "f"],
-["egitim", "Eğitim", "direcțiune (f)", "müdürlük", "f"],
+["egitim", "Eğitim", "bursă de merit", "başarı bursu", "f"],
+["egitim", "Eğitim", "direcțiune", "müdürlük", "f"],
 ["egitim", "Eğitim", "explicație", "açıklama", "f, explicații"],
 ["egitim", "Eğitim", "facultate", "fakülte", "f, facultăți"],
-["egitim", "Eğitim", "fișă de înscriere (f)", "kayıt formu", "f"],
+["egitim", "Eğitim", "fișă de înscriere", "kayıt formu", "f"],
 ["egitim", "Eğitim", "greșeală", "hata", "f, greșeli"],
 ["egitim", "Eğitim", "masterat (n) / master", "yüksek lisans", "n"],
 ["egitim", "Eğitim", "retroproiector", "tepegöz", "n, retroproiectoare"],
 ["yeme", "Yeme-İçme/Konaklama", "băuturi răcoritoare (f pl.)", "serinletici içecekler", ""],
-["yeme", "Yeme-İçme/Konaklama", "pensiune completă (f)", "tam pansiyon", "f"],
-["yeme", "Yeme-İçme/Konaklama", "aer condiționat (n)", "klima", "n"],
-["yeme", "Yeme-İçme/Konaklama", "alimentație (f)", "beslenme", "f"],
+["yeme", "Yeme-İçme/Konaklama", "pensiune completă", "tam pansiyon", "f"],
+["yeme", "Yeme-İçme/Konaklama", "aer condiționat", "klima", "n"],
+["yeme", "Yeme-İçme/Konaklama", "alimentație", "beslenme", "f"],
 ["yeme", "Yeme-İçme/Konaklama", "ambianță", "ortam, atmosfer", "f, ambianțe"],
-["yeme", "Yeme-İçme/Konaklama", "brânză topită (f)", "üçgen peynir", "f"],
+["yeme", "Yeme-İçme/Konaklama", "brânză topită", "üçgen peynir", "f"],
 ["yeme", "Yeme-İçme/Konaklama", "cafea filtru", "filtre kahve", "varyant: expresso / turcească"],
 ["yeme", "Yeme-İçme/Konaklama", "condiment", "baharat", "n, condimente"],
 ["yeme", "Yeme-İçme/Konaklama", "deșteptător", "çalar saat", "n, deșteptătoare"],
 ["yeme", "Yeme-İçme/Konaklama", "friptură", "kızartma, rosto", "f, fripturi"],
 ["yeme", "Yeme-İçme/Konaklama", "garnitură", "garnitür", "f, garnituri"],
 ["yeme", "Yeme-İçme/Konaklama", "proveniență", "menşe, kaynak", "f, proveniențe"],
-["yeme", "Yeme-İçme/Konaklama", "salată de vinete (f)", "patlıcan salatası", "f"],
-["yeme", "Yeme-İçme/Konaklama", "salată orientală (f)", "patates salatası", "f"],
-["yeme", "Yeme-İçme/Konaklama", "semipensiune (f)", "yarım pansiyon", "f"],
-["yeme", "Yeme-İçme/Konaklama", "vin spumos (n)", "köpüklü şarap", "n"],
+["yeme", "Yeme-İçme/Konaklama", "salată de vinete", "patlıcan salatası", "f"],
+["yeme", "Yeme-İçme/Konaklama", "salată orientală", "patates salatası", "f"],
+["yeme", "Yeme-İçme/Konaklama", "semipensiune", "yarım pansiyon", "f"],
+["yeme", "Yeme-İçme/Konaklama", "vin spumos", "köpüklü şarap", "n"],
 ["yeme", "Yeme-İçme/Konaklama", "aliment", "gıda maddesi", "n, alimente"],
 ["yeme", "Yeme-İçme/Konaklama", "porție", "porsiyon", "f, porții"],
 ["yeme", "Yeme-İçme/Konaklama", "pătură", "battaniye", "f, pături"],
 ["yeme", "Yeme-İçme/Konaklama", "a-i fi sete", "susamak", ""],
-["doga", "Coğrafya/Doğa/İklim", "pasăre răpitoare (f)", "yırtıcı kuş", "f"],
+["doga", "Coğrafya/Doğa/İklim", "pasăre răpitoare", "yırtıcı kuş", "f"],
 ["doga", "Coğrafya/Doğa/İklim", "păsări cântătoare", "ötücü kuşlar", ""],
 ["doga", "Coğrafya/Doğa/İklim", "păsări călătoare", "göçmen kuşlar", ""],
-["doga", "Coğrafya/Doğa/İklim", "sărbătoare națională (f)", "millî bayram", "f"],
+["doga", "Coğrafya/Doğa/İklim", "sărbătoare națională", "millî bayram", "f"],
 ["doga", "Coğrafya/Doğa/İklim", "sărbătoare religioasă", "dinî bayram", "f, sărbători"],
-["doga", "Coğrafya/Doğa/İklim", "climă temperată (f)", "ılıman iklim", "f"],
+["doga", "Coğrafya/Doğa/İklim", "climă temperată", "ılıman iklim", "f"],
 ["doga", "Coğrafya/Doğa/İklim", "precipitație", "yağış", "f, precipitații"],
-["doga", "Coğrafya/Doğa/İklim", "timp probabil (n)", "beklenen hava durumu", "n"],
-["doga", "Coğrafya/Doğa/İklim", "vegetație (f)", "bitki örtüsü", "f"],
-["doga", "Coğrafya/Doğa/İklim", "căldură (f)", "sıcaklık", "f"],
+["doga", "Coğrafya/Doğa/İklim", "timp probabil", "beklenen hava durumu", "n"],
+["doga", "Coğrafya/Doğa/İklim", "vegetație", "bitki örtüsü", "f"],
+["doga", "Coğrafya/Doğa/İklim", "căldură", "sıcaklık", "f"],
 ["doga", "Coğrafya/Doğa/İklim", "gălăgios", "gürültücü", ""],
 ["doga", "Coğrafya/Doğa/İklim", "ninsoare", "kar yağışı", "f, ninsori"],
 ["doga", "Coğrafya/Doğa/İklim", "pitoresc", "pitoresk, göz alıcı", ""],
 ["doga", "Coğrafya/Doğa/İklim", "animale domestice", "evcil hayvanlar", ""],
 ["doga", "Coğrafya/Doğa/İklim", "animale sălbatice", "yaban hayvanları", ""],
 ["doga", "Coğrafya/Doğa/İklim", "așezare", "yerleşim", "f, așezări"],
-["doga", "Coğrafya/Doğa/İklim", "buletin meteorologic (n)", "hava raporu", "n"],
-["doga", "Coğrafya/Doğa/İklim", "centru istoric (n)", "tarihî merkez", "n"],
+["doga", "Coğrafya/Doğa/İklim", "buletin meteorologic", "hava raporu", "n"],
+["doga", "Coğrafya/Doğa/İklim", "centru istoric", "tarihî merkez", "n"],
 ["doga", "Coğrafya/Doğa/İklim", "grad Celsius", "santigrat derece", "n, grade"],
 ["doga", "Coğrafya/Doğa/İklim", "plantă medicinală", "şifalı bitki", "f, plante"],
 ["doga", "Coğrafya/Doğa/İklim", "ploios", "yağmurlu", ""],
-["doga", "Coğrafya/Doğa/İklim", "poluare (f)", "kirlilik", "f"],
+["doga", "Coğrafya/Doğa/İklim", "poluare", "kirlilik", "f"],
 ["doga", "Coğrafya/Doğa/İklim", "păsări de curte", "kümes hayvanları", ""],
 ["dil", "Yabancı Dil Öğrenme", "complement", "tümleç", "n, complemente"],
 ["dil", "Yabancı Dil Öğrenme", "compoziție", "kompozisyon", "f, compoziții"],
@@ -461,10 +461,10 @@ const VOCAB_B1 = [
 ["dil", "Yabancı Dil Öğrenme", "comunicativ", "iletişimsel", ""],
 ["dil", "Yabancı Dil Öğrenme", "conjugare", "çekim (fiil)", "f, conjugări"],
 ["dil", "Yabancı Dil Öğrenme", "pronunțare", "telaffuz", "f, pronunțări"],
-["dil", "Yabancı Dil Öğrenme", "limbă literară (f)", "edebî dil", "f"],
-["dil", "Yabancı Dil Öğrenme", "limbă maternă (f)", "ana dil", "f"],
-["dil", "Yabancı Dil Öğrenme", "limbă populară (f)", "halk dili", "f"],
-["dil", "Yabancı Dil Öğrenme", "limbă străină (f)", "yabancı dil", "f"],
+["dil", "Yabancı Dil Öğrenme", "limbă literară", "edebî dil", "f"],
+["dil", "Yabancı Dil Öğrenme", "limbă maternă", "ana dil", "f"],
+["dil", "Yabancı Dil Öğrenme", "limbă populară", "halk dili", "f"],
+["dil", "Yabancı Dil Öğrenme", "limbă străină", "yabancı dil", "f"],
 ["dil", "Yabancı Dil Öğrenme", "oribil", "berbat", ""],
 ["dil", "Yabancı Dil Öğrenme", "temă de casă", "ev ödevi", "f, teme"],
 ["kavram", "Soyut Kavramlar", "a avea loc", "gerçekleşmek, vuku bulmak", "fiil öbeği"],
@@ -653,7 +653,7 @@ const VERBS_B1 = [
 ["a procura", "tedarik etmek, edinmek", ["procuram", "procurai", "procura", "procuram", "procurați", "procurau"], ["aș procura", "ai procura", "ar procura", "am procura", "ați procura", "ar procura"], "I (-a)"],
 ["a se defecta", "bozulmak", ["mă defectam", "te defectai", "se defecta", "ne defectam", "vă defectați", "se defectau"], ["m-aș defecta", "te-ai defecta", "s-ar defecta", "ne-am defecta", "v-ați defecta", "s-ar defecta"], "I (-a)"],
 ["a se dezbrăca", "soyunmak", ["mă dezbrăcam", "te dezbrăcai", "se dezbrăca", "ne dezbrăcam", "vă dezbrăcați", "se dezbrăcau"], ["m-aș dezbrăca", "te-ai dezbrăca", "s-ar dezbrăca", "ne-am dezbrăca", "v-ați dezbrăca", "s-ar dezbrăca"], "I (-a)"],
-["a se purta", "moda olmak", ["mă purtam", "te purtai", "se purta", "ne purtam", "vă purtați", "se purtau"], ["m-aș purta", "te-ai purta", "s-ar purta", "ne-am purta", "v-ați purta", "s-ar purta"], "I (-a)"],
+["a se purta", "davranmak", ["mă purtam", "te purtai", "se purta", "ne purtam", "vă purtați", "se purtau"], ["m-aș purta", "te-ai purta", "s-ar purta", "ne-am purta", "v-ați purta", "s-ar purta"], "I (-a)"],
 ["a afuma", "tütsülemek", ["afumam", "afumai", "afuma", "afumam", "afumați", "afumau"], ["aș afuma", "ai afuma", "ar afuma", "am afuma", "ați afuma", "ar afuma"], "I (-a)"],
 ["a coase", "dikmek", ["coseam", "coseai", "cosea", "coseam", "coseați", "coseau"], ["aș coase", "ai coase", "ar coase", "am coase", "ați coase", "ar coase"], "III (almaşmalı)"],
 ["a adormi", "uykuya dalmak", ["adormeam", "adormeai", "adormea", "adormeam", "adormeați", "adormeau"], ["aș adormi", "ai adormi", "ar adormi", "am adormi", "ați adormi", "ar adormi"], "IV (-i)"],
@@ -899,7 +899,7 @@ const SENTENCES_B1 = [
    ikisi de doğru olduğu için, çizgi olmasa maddenin iki cevabı olurdu. */
 const KLITIK_B1 = [
 ["Ieri __-am întâlnit pe Andrei în fața bibliotecii.", "l", "(3) bileşik zaman, A 3.tk eril"],
-["Nu-__ mai văzusem de aproape un an.", "l", "(2) nu ile kaynaşma, A"],
+["Pe vecinul nostru nu-__ mai văzusem de aproape un an.", "l", "(2) nu ile kaynaşma, A 3.tk eril — pe vecinul ikilemesi"],
 ["Am cumpărat cartea ieri și am citit-__ într-o noapte.", "o", "(4) o istisnası — participiu'dan SONRA"],
 ["Pe Maria n-am mai văzut-__ de anul trecut.", "o", "(4) o istisnası — participiu'dan SONRA"],
 ["Nu-__ spune nimic lui Andrei, e o surpriză pentru el!", "i", "olumsuz emir, D 3.tk — lui Andrei ikilemesi"],
@@ -1042,6 +1042,31 @@ function _b1Celdirici(havuz, alan, dogru, adet){
   return out;
 }
 
+/* "f" / "n" / "m, metri" gibi kısa cinsiyet notunu okunur hâle getirir. */
+function _b1CinsiyetAc(bilgi){
+  const b = String(bilgi||"").trim();
+  if(!b) return undefined;
+  const ad = {f:"dişil", n:"nötr", m:"eril"}[b[0]];
+  if(!ad) return b;
+  const kalan = b.slice(1).replace(/^[,\s]+/, "");
+  return kalan ? ad + " · çoğul: " + kalan : ad;
+}
+
+/* Karşıt, kelimenin önek almış hâli mi? (diyakritik ve büyük/küçük harf
+   duyarsız; "a " mastar öneki atılıyor) */
+function _b1Sade(x){
+  return String(x||"").toLowerCase()
+    .replace(/^a\s+/, "")
+    .replace(/ă/g,"a").replace(/â/g,"a").replace(/î/g,"i")
+    .replace(/ș|ş/g,"s").replace(/ț|ţ/g,"t")
+    .replace(/[^a-z]/g,"");
+}
+function _b1KokPaylasiyor(ro, karsit){
+  const a = _b1Sade(ro), b = _b1Sade(karsit);
+  if(a.length < 4 || b.length < 4) return false;
+  return b.includes(a) || a.includes(b);
+}
+
 /* --- Kelime: çoktan seçmeli; kutu 3'ten sonra yazdırma (A1/A2 deseni) --- */
 function exerciseForVocabB1(v){
   const [tema,temaAd,ro,tr,bilgi,id] = v;
@@ -1052,15 +1077,24 @@ function exerciseForVocabB1(v){
   const ayniTema = havuz.filter(x => x[0] === tema);
   const p = ayniTema.length >= 6 ? ayniTema : havuz;
   if(yaz){
+    /* Çok karşılıklı gloss'ta ("okul eğitimi/formasyonu") eskiden yalnızca tam
+       dize kabul ediliyordu; A1/A2'de kapatılan haksız yanlış B1'de duruyordu. */
     if(yon === "ro2tr") return {id, kind:"type", prompt:`"${ro}" ne demek? (Türkçe yaz)`,
-      hint:temaAd, catKey:tema, answer:tr, needsRoChars:false, roDisplay:ro};
+      hint:temaAd, catKey:tema, answer:tr,
+      answerAlts:(typeof anlamSecenekleri === "function" ? anlamSecenekleri(tr) : null),
+      needsRoChars:false, roDisplay:ro};
     return {id, kind:"type", prompt:`"${tr}" kelimesini Romence yaz.`,
       hint:temaAd, catKey:tema, answer:ro, needsRoChars:true, roDisplay:ro};
   }
+  /* Cinsiyet rozete yazılıyordu (". · n"): Romencede asıl zor iş ismin
+     cinsiyetini bilmek, onu soruda hediye edince geriye tanıma kalıyordu.
+     Bilgi artık cevaptan SONRA veriliyor — A2 dativ sorusundaki düzeltmenin
+     aynısı. */
   if(yon === "ro2tr") return {id, kind:"mc", prompt:`"${ro}" ne demek?`,
-    hint:temaAd + (bilgi ? " · " + bilgi : ""), catKey:tema,
+    hint:temaAd, catKey:tema, aciklama:_b1CinsiyetAc(bilgi),
     options:shuffle([tr, ..._b1Celdirici(p, d=>d[3], tr, 3)]), answer:tr, roDisplay:ro};
   return {id, kind:"mc", prompt:`"${tr}" Romence nedir?`, hint:temaAd, catKey:tema,
+    aciklama:_b1CinsiyetAc(bilgi),
     options:shuffle([ro, ..._b1Celdirici(p, d=>d[2], ro, 3)]), answer:ro, roDisplay:ro};
 }
 
@@ -1072,16 +1106,27 @@ function exerciseForVerbB1(v){
   /* Kutu 2'den önce yalnızca imperfect; sonra condițional da devreye girer —
      kolaydan zora. Aynı oturumda tek kip blok çalışılır, karıştırma günler
      arasında olur (Pan ve ark. 2019). */
-  const kip = entry.box >= 2 && Math.random() < 0.5 ? "cond" : "imp";
+  /* KİP DAĞILIMI. Eski koşul (box >= 2) pratikte condițional'ı hiç sormuyordu:
+     kutu 2'ye çıkmak aynı fiili üst üste üç kez doğru bilmeyi gerektiriyor ve
+     218 fiil arasından aynı fiilin arka arkaya gelme ihtimali düşük. Kalite
+     kontrolde arka arkaya 32 fiil sorusunun 32'si de imperfect çıktı, hâlbuki
+     sınav ekranı iki kipi de vaat ediyor. Artık condițional ilk turdan
+     itibaren çıkıyor, kutu ilerledikçe payı artıyor (kolaydan zora korunuyor). */
+  const condOlasilik = entry.box >= 2 ? 0.5 : 0.25;
+  const kip = Math.random() < condOlasilik ? "cond" : "imp";
   if(kip === "cond"){
     return {id, kind:"type",
       prompt:`"${ro}" (${tr}) — "${PERSON_LABEL[p]}" için condițional-optativ biçimini yaz.`,
-      hint:"Condițional = yardımcı + mastar · istisnası yok",
+      hint:"Condițional-optativ",
+      aciklama:"Yardımcı (aș/ai/ar/am/ați/ar) + mastar — istisnası yok.",
       answer:cond[p], needsRoChars:true, roDisplay:cond[p]};
   }
+  /* Çekim sınıfı rozete yazılıyordu ("Imperfect · IV (-i)") — imperfect ekini
+     belirleyen şey tam olarak o sınıf olduğu için cevabın yarısını veriyordu. */
   return {id, kind:"type",
     prompt:`"${ro}" (${tr}) — "${PERSON_LABEL[p]}" için imperfect (bitmemiş geçmiş) biçimini yaz.`,
-    hint:"Imperfect · " + grup, answer:imp[p], needsRoChars:true, roDisplay:imp[p]};
+    hint:"Imperfect", aciklama:grup + " grubu",
+    answer:imp[p], needsRoChars:true, roDisplay:imp[p]};
 }
 
 /* --- Zıt anlam / türetme: karşıtı yazdırılır (önek sistemi) --- */
@@ -1091,7 +1136,14 @@ function exerciseForAntonimB1(a){
   /* Çok kelimeli karşıtlarda (61'in 19'u: "prost întreținut", "culoare deschisă")
      serbest yazım bir harf sapmasında bile reddediyor — onlar seçmeli kalıyor. */
   const cokKelimeli = karsit.trim().includes(" ");
-  const yaz = entry.box >= 2 && !cokKelimeli;
+  /* KÖK HEDİYESİ. Karşıt, kelimenin önek almış hâliyse (egalitate → inegalitate)
+     çoktan seçmelide dört şıktan yalnızca biri kökü paylaşıyor ve öğrenci
+     kelimeyi hiç bilmeden doğru şıkkı buluyor; üstelik ölçülmek istenen şey
+     (hangi önek: in-/im-/ne-) hiç sorulmamış oluyor. Bu maddeler ilk turdan
+     itibaren YAZDIRILIYOR — önek seçimi ancak böyle ölçülüyor. Anlamca farklı
+     karşıtlar (a decola → a ateriza, larg → strâmt) seçmeli kalıyor. */
+  const kokPaylasiyor = _b1KokPaylasiyor(ro, karsit);
+  const yaz = (entry.box >= 2 || kokPaylasiyor) && !cokKelimeli;
   const havuz = ANTONIM_B1.filter(x => x[4] !== id);
   if(yaz) return {id, kind:"type", prompt:`"${ro}" (${tr}) — karşıtını Romence yaz.`,
     hint:"Zıt anlam / türetme", cue:trKarsit, answer:karsit, needsRoChars:true, roDisplay:karsit};
@@ -1105,51 +1157,116 @@ function exerciseForAntonimB1(a){
 function exerciseForSentenceB1(item){
   /* buildSessionQueue nesne veriyor: {ro, tr, id} — A1/A2 ile aynı. */
   const {ro, tr, id} = item;
-  /* Noktalama kırpılmazsa kelime bankasında "bibliotecii." çipi görünür ve
-     son kelimeyi bedavaya söyler (A1/A2 de bu yüzden kırpıyor). */
-  const temiz = ro.replace(/[.!?]+$/,"").replace(/\s+/g," ").trim();
+  /* TAŞLARI NÖTRLEŞTİRME — A1/A2 ile aynı kural.
+     Yalnızca SON noktalama kırpılıyordu; cümle başındaki büyük harf ve İÇ
+     virgül taşta kalıyordu. Sonuç: 45 cümlenin 45'inde tek büyük harfli taş
+     ilk kelimeyi ("După", "Ușa", "Când"), virgüllü taş da kendi yerini
+     ("ploaia,", "mea,") bedavaya söylüyordu — bulmaca Romence bilinmeden
+     çözülebiliyor, üstelik bu deneme sınavında da geçerliydi.
+     Özel adlar (România, Maria…) büyük kalır, yoksa yazım yanlış öğretilir.
+     Cevap karşılaştırması norm() ile yapıldığı ve norm() büyük/küçük harfle
+     noktalamayı yok saydığı için doğru yazılış kaybolmuyor; kullanıcı onu
+     cevaptan sonra "Yazılışı:" satırında görüyor. */
+  const ozel = (typeof ozelAdSeti === "function") ? ozelAdSeti() : new Set();
+  const kelimeler = ro.replace(/[.!?]+$/,"").replace(/\s+/g," ").trim().split(" ").filter(Boolean)
+    .map(w=> w.replace(/[,;:!?.]+$/,""))
+    .map((w,i)=> (i===0 && !ozel.has(w)) ? w.charAt(0).toLowerCase()+w.slice(1) : w);
   return {id, kind:"order", prompt:"Bu cümleyi Romence kur:",
     hint:"B1 Cümle — Kelime Sırası", cue:tr,
-    words:shuffle(temiz.split(" ")), answer:temiz, roDisplay:ro};
+    words:shuffle(kelimeler.slice()), answer:kelimeler.join(" "), roDisplay:ro};
 }
+
+/* Gramer maddeleri konu başına TEK id taşıyordu (gr_b1_klitik gibi): tekrar
+   motoru 22 klitik maddesini tek öğe sanıyor, hangi maddede zorlandığın
+   izlenemiyor ve İlerleme ekranı 94 madde yerine 4 madde sayıyordu. Artık her
+   madde kendi id'sini alıyor ve seçim ustalık ağırlıklı — A2'deki _gramSecA2
+   deseninin aynısı. */
+function _gramSecB1(list, topic){
+  const ids = list.map((_,i)=> "gr_b1_"+topic+"_"+i);
+  const agirlikli = typeof weightedSample === "function"
+                 && typeof STATE !== "undefined" && STATE && STATE.mastery;
+  const sec = (agirlikli ? weightedSample(ids,1)[0] : null) || pick(ids);
+  const i = ids.indexOf(sec);
+  return [list[i < 0 ? 0 : i], sec];
+}
+
+/* Şablonlarda boşluk okunaklı olsun diye "__ ," ve "__ ." biçiminde yazılmıştı;
+   doldurulunca öğrenciye "în mijloc , fără…" gibi yanlış tipografi gösteriyordu.
+   Gösterimde noktalama öncesi boşluğu kapatıyoruz. */
+function _b1Noktalama(t){ return String(t).replace(/\s+([,.;:!?])/g, "$1"); }
 
 /* --- Gramer: ILR B1 sınavının dört soru tipi --- */
 function exerciseForGrammarB1(topic){
   const L = GRAMMAR_LABELS_B1[topic] || "Gramer";
 
   if(topic === "klitik"){
-    const [cumle, cevap, kural] = pick(KLITIK_B1);
-    /* İpucu bilerek genel tutuluyor: "kural" alanı hâl/kişi/sayı bilgisini
-       içeriyor ve rozete yazılsa sorunun ölçtüğü her şeyi vermiş olurduk. */
-    return {id:"gr_b1_klitik", kind:"type", prompt:cumle.replace("__","______"),
-      hint:L, cue:"Boşluğa yalnızca zamiri yaz; kısa çizgi cümlede zaten var.",
-      answer:cevap, needsRoChars:true, roDisplay:cumle.replace("__",cevap),
-      strictHyphen:true, aciklama:kural};
+    const [madde, id] = _gramSecB1(KLITIK_B1, "klitik");
+    const [cumle, cevap, kural] = madde;
+    /* İpucu maddeye BAĞLI: 22 cümlenin 5'inde kısa çizgi yok ("Filmul acela __
+       văzusem" → îl) ve sabit ipucu "kısa çizgi zaten var" dediği için ipucuna
+       uyan öğrenci "l" yazıp haksız yere yanlış alıyordu. */
+    const tireli = /__-|-__/.test(cumle);
+    const ipucu = tireli
+      ? "Boşluğa yalnızca zamiri yaz; kısa çizgi cümlede zaten var."
+      : "Zamirin tam biçimini yaz (kısa çizgi yok).";
+    /* "kural" alanı hâl/kişi/sayı bilgisini içeriyor; rozete yazılsa sorunun
+       ölçtüğü her şeyi vermiş olurduk — cevaptan SONRA gösteriliyor. */
+    return {id, kind:"type", prompt:_b1Noktalama(cumle.replace("__","______")),
+      hint:L, cue:ipucu,
+      answer:cevap, needsRoChars:true, roDisplay:_b1Noktalama(cumle.replace("__",cevap)),
+      strictHyphen:tireli, aciklama:kural};
   }
   if(topic === "gendat"){
-    const [cumle, kok, cevap, sinif] = pick(GENDAT_B1);
-    return {id:"gr_b1_gendat", kind:"type", prompt:cumle.replace("__","______"),
+    const [madde, id] = _gramSecB1(GENDAT_B1, "gendat");
+    const [cumle, kok, cevap, sinif] = madde;
+    return {id, kind:"type", prompt:_b1Noktalama(cumle.replace("__","______")),
       hint:L, cue:`Parantezdeki kelimeyi doğru biçimde yaz: (${kok})`,
-      answer:cevap, needsRoChars:true, roDisplay:cumle.replace("__",cevap), aciklama:sinif};
+      answer:cevap, needsRoChars:true, roDisplay:_b1Noktalama(cumle.replace("__",cevap)),
+      aciklama:_b1KisaltmaAc(sinif)};
   }
   if(topic === "edat"){
-    const [cumle,a,b,c,d,dogru,gerekce] = pick(EDAT_B1);
+    const [madde, id] = _gramSecB1(EDAT_B1, "edat");
+    const [cumle,a,b,c,d,dogru,gerekce] = madde;
     const secenek = {a,b,c,d};
     /* 'dogru' sütunu bozulursa cevap undefined olur ve soru sessizce
        cevaplanamaz hâle gelir; ilk şıkka düşmek görünür bir hata bırakır. */
     const cevap = secenek[dogru] || a;
-    return {id:"gr_b1_edat", kind:"mc", prompt:cumle.replace("__","______"),
+    return {id, kind:"mc", prompt:_b1Noktalama(cumle.replace("__","______")),
       hint:L, options:shuffle([a,b,c,d]), answer:cevap,
-      roDisplay:cumle.replace("__",cevap)};
+      roDisplay:_b1Noktalama(cumle.replace("__",cevap)), aciklama:gerekce};
   }
   if(topic === "turetme"){
-    const [cumle, kok, cevap, yol] = pick(TURETME_B1);
-    return {id:"gr_b1_turetme", kind:"type", prompt:cumle.replace("__","______"),
-      hint:L, cue:`Sağdaki kökten türet: (${kok})`,
-      answer:cevap, needsRoChars:true, roDisplay:cumle.replace("__",cevap), aciklama:yol};
+    const [madde, id] = _gramSecB1(TURETME_B1, "turetme");
+    const [cumle, kok, cevap, yol] = madde;
+    /* Kök sağda değil, aynı satırda parantez içinde duruyor. */
+    return {id, kind:"type", prompt:_b1Noktalama(cumle.replace("__","______")),
+      hint:L, cue:`Parantezdeki kökten türet: (${kok})`,
+      answer:cevap, needsRoChars:true, roDisplay:_b1Noktalama(cumle.replace("__",cevap)),
+      aciklama:yol};
   }
   return exerciseForGrammarB1("klitik"); // güvenli geri dönüş
 }
+
+/* Genitiv/dativ açıklamaları "eril çğ, D" gibi kısaltmalarla yazılmıştı;
+   öğrenci "çğ" ve "D"yi çözemiyordu. Cevaptan sonra açık yazıyoruz. */
+function _b1KisaltmaAc(s){
+  return String(s)
+    .replace(/\btk\b/g, "tekil").replace(/\bçğ\b/g, "çoğul")
+    .replace(/,\s*G\b/g, ", genitiv (kimin?)").replace(/,\s*D\b/g, ", dativ (kime?)")
+    .replace(/\bözel ad f\b/g, "özel ad, dişil");
+}
+
+/* Gramer maddelerinin tam id listesi. Kelime/fiil havuzları gibi sayılabilir
+   olması gerekiyor: yoksa İlerleme ekranı gramer için gerçek bir payda
+   bulamıyor ("karşılaşılan 4" gibi yanıltıcı bir sayı çıkıyordu) ve "B1
+   HAZIRLIK" yüzdesi, ILR sınavının gramer bloğunu tamamen dışarıda
+   bırakıyordu. Üretici ile aynı şemayı kullanır: gr_b1_<konu>_<sıra>. */
+const GRAM_IDS_B1 = [
+  ...KLITIK_B1.map((_,i)=> "gr_b1_klitik_"+i),
+  ...GENDAT_B1.map((_,i)=> "gr_b1_gendat_"+i),
+  ...EDAT_B1.map((_,i)=> "gr_b1_edat_"+i),
+  ...TURETME_B1.map((_,i)=> "gr_b1_turetme_"+i),
+];
 
 /* --- B1 havuz özeti (ilerleme ekranı için) --- */
 const B1_STATS = {

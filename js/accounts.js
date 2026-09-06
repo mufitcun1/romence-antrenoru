@@ -574,7 +574,13 @@ async function doPublish(){
   const ok = await saveAccountsToStorage(ACCOUNTS);
   pendingSave = false;
   if(ok) showSavePill();
-  syncSoon();             // yerel kayıt kesin; bulut arkadan gelir
+  /* Senkronun kendi uyguladığı kayıttan sonra yeni bir senkron KURMUYORUZ:
+     syncNow zaten birleştirmeyi push ediyor. Bayrak olmadan bu satır her
+     senkrondan sonra 4 saniyelik bir sonrakini kuruyordu; uygulama boşta
+     dururken bile sonsuz çevrim dönüyor, ekran her 5 saniyede yeniden
+     çizilip tur/sınav sonuç ekranını siliyordu. */
+  const senkronUyguluyor = (typeof syncApplying !== "undefined") && syncApplying;
+  if(!senkronUyguluyor) syncSoon();   // yerel kayıt kesin; bulut arkadan gelir
 }
 /* Sonuç ekranından ana ekrana dönerken: varsa bekleyen ilerlemeyi hemen kaydet. */
 function goHome(){

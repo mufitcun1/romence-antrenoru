@@ -4,7 +4,7 @@
 const VOCAB = [
 ["gun","gün/ay","luni","pazartesi"],["gun","gün/ay","marți","salı"],["gun","gün/ay","miercuri","çarşamba"],
 ["gun","gün/ay","joi","perşembe"],["gun","gün/ay","vineri","cuma"],["gun","gün/ay","sâmbătă","cumartesi"],
-["gun","gün/ay","duminică","pazar"],["gun","gün/ay","ianuarie","ocak"],["gun","gün/ay","februarie","şubat"],
+["gun","gün/ay","duminică","pazar"],["gun","gün/ay","ianuarie","ocak (ay)"],["gun","gün/ay","februarie","şubat"],
 ["gun","gün/ay","martie","mart"],["gun","gün/ay","aprilie","nisan"],["gun","gün/ay","mai","mayıs"],
 ["gun","gün/ay","iunie","haziran"],["gun","gün/ay","iulie","temmuz"],["gun","gün/ay","august","ağustos"],
 ["gun","gün/ay","septembrie","eylül"],["gun","gün/ay","octombrie","ekim"],["gun","gün/ay","noiembrie","kasım"],

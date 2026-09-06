@@ -59,6 +59,12 @@ let syncSession = null;   // {access_token, refresh_token, expires_at, user_id, 
 let syncStatus  = "off";
 let syncTimer   = null;
 let syncBusy    = false;
+/* Senkronun UYGULADIĞI kayıt sırasında true. accounts.js'teki doPublish()
+   bunu görünce syncSoon() çağırmıyor — yoksa senkron kendi kaydını
+   tetikleyip 4 saniyede bir kendini yeniden kuruyor ve kullanıcı hiçbir
+   şey yapmasa bile sonsuz bir çevrim dönüyordu. Dosyalar arası okunduğu
+   için bilerek "var": TDZ'ye takılmadan typeof ile sorgulanabilsin. */
+var syncApplying = false;
 
 /* Durumu tek yerden değiştiriyoruz: rozeti güncellemeyi unutmak, senkronun
    sessizce başarısız olmasının en kolay yoluydu. */
@@ -402,12 +408,23 @@ async function syncNow(){
       Object.assign(STATE, merged);
       if(typeof updateGameBar === "function") updateGameBar();
       pendingSave = true;
-      if(typeof persistNow === "function") await persistNow();
+      /* Buradaki kayıt syncSoon() tetiklememeli: birleştirmeyi zaten birkaç
+         satır aşağıda kendimiz push ediyoruz. Bayraksız hâlde her senkron bir
+         sonrakini kuruyordu (syncNow → persistNow → doPublish → syncSoon → …)
+         ve uygulama boştayken bile 4 saniyede bir çevrim dönüyordu. */
+      syncApplying = true;
+      try{
+        if(typeof persistNow === "function") await persistNow();
+      }finally{
+        syncApplying = false;
+      }
       /* Ekranda görünen rakamlar (ustalık, seri, geçmiş) artık eski. Ana
-         ekranları yeniden çiziyoruz — ama soru ekranındaysak DOKUNMUYORUZ,
-         yoksa kullanıcının cevapladığı soru elinden alınırdı. */
-      const soruEkraninda = !!document.querySelector('.exprogress');
-      if(!soruEkraninda && typeof switchTab === "function" && typeof activeTab === "string"){
+         ekranları yeniden çiziyoruz — ama iki ekrana DOKUNMUYORUZ: soru
+         ekranında kullanıcının cevapladığı soru elinden alınıyordu, tur/sınav
+         SONUÇ ekranında ise skoru, kazandığı XP'yi ve bölüm dağılımını
+         okumasına fırsat kalmadan ekran ana ekranla değişiyordu. */
+      const dokunmaBolgesi = !!document.querySelector('.exprogress, .testresult');
+      if(!dokunmaBolgesi && typeof switchTab === "function" && typeof activeTab === "string"){
         switchTab(activeTab);
       }
     }

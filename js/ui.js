@@ -3,7 +3,7 @@ let activeTab = "practice";
 let currentEx = null;
 let sessionQueue = [];
 let sessionIdx = 0;
-let sessionScore = {correct:0,total:0};
+let sessionScore = {correct:0,total:0,firstTry:0};
 let testMode = false;
 let testResults = [];
 let practiceFilter = "mixed"; // mixed | voc | ver | gram | lis | ifade | cum
@@ -47,6 +47,10 @@ const LEVELS = {
                cum:exerciseForSentence, gram:exerciseForGrammar, ifade:null}),
     /* İlerleme ekranındaki "genel hazırlık" yüzdesinin ağırlıkları */
     dashWeights: {voc:0.5, ver:0.3, cum:0.2, ifade:0},
+    /* Gramer maddelerinin kimlik öneki. Gramer havuzu vocab/verbs gibi
+       listelenebilir değil (üreticiler madde madde üretiyor), bu yüzden
+       İlerleme ekranı karşılaşılan maddeleri bu önekten sayıyor. */
+    gramPrefix: "gram_",
     testAciklama: "24 soruluk, gerçek A1 sınavı formatına yakın karışık test: kelime bilgisi, fiil çekimi, gramer (edat/soru kelimesi/olumsuzlama/sıfat uyumu/sayılar), dinleme ve cümle kurma.",
   },
   A2: {
@@ -69,6 +73,7 @@ const LEVELS = {
     ex: ()=> ({voc:exerciseForVocabA2, ver:exerciseForVerbA2, lis:null,
                cum:exerciseForSentenceA2, gram:exerciseForGrammarA2, ifade:exerciseForExpresie}),
     dashWeights: {voc:0.45, ver:0.25, cum:0.15, ifade:0.15},
+    gramPrefix: "gr_a2_",
     testAciklama: "24 soruluk A2 denemesi: kelime bilgisi, fiil çekimi (şimdiki zaman · ortaç · conjunctiv), gramer (dativ, işaret ve ilgi zamirleri, emir kipi, edat-hâl, karşılaştırma, olumsuzluk, bağlaçlar), kalıp ifadeler ve cümle kurma.",
   },
   B1: {
@@ -92,9 +97,17 @@ const LEVELS = {
     listening: false,
     ex: ()=> ({voc:exerciseForVocabB1, ver:exerciseForVerbB1, lis:null,
                cum:exerciseForSentenceB1, gram:exerciseForGrammarB1, ifade:exerciseForAntonimB1}),
-    /* Gramer ağırlığı ILR B1 sınavının 30 maddelik gramer bloğundan geliyor. */
-    dashWeights: {voc:0.40, ver:0.25, cum:0.15, ifade:0.20},
-    testAciklama: "24 soruluk B1 denemesi: kelime bilgisi, fiil çekimi (imperfect · condițional-optativ), gramer (klitik zamirler, genitiv-dativ, edat kalıpları, kelime türetme), zıt anlam/türetme ve cümle kurma. Gramer ağırlığı ILR B1 sınavının kendi dağılımına göre kuruldu.",
+    /* Gramer ağırlığı ILR B1 sınavının 30 maddelik gramer bloğundan geliyor.
+       Gramer daha önce "B1 HAZIRLIK" yüzdesinde SIFIR ağırlıktaydı: sınavın
+       gramer puanının %53'ü klitik+hâl, %27'si edat, %20'si türetmeden
+       geldiği hâlde rozet bu bloğu hiç ölçmüyordu. */
+    dashWeights: {voc:0.35, ver:0.20, cum:0.10, ifade:0.15, gram:0.20},
+    gramPrefix: "gr_b1_",
+    /* Gramer maddeleri artık kelime/fiil havuzları gibi sayılabilir: İlerleme
+       ekranı gerçek bir payda kullanabiliyor ve maddeler ustalık takibine
+       giriyor (94 madde → toplam havuz 844'ten 938'e çıkıyor). */
+    gramIds: ()=> (typeof GRAM_IDS_B1 !== "undefined" ? GRAM_IDS_B1 : []),
+    testAciklama: "24 soruluk B1 denemesi: kelime bilgisi, fiil çekimi (imperfect · condițional-optativ), gramer (klitik zamirler, genitiv-dativ, edat kalıpları, kelime türetme), zıt anlam/türetme ve cümle kurma. Gramer soruları ILR B1 sınavının gramer bloğundaki dört madde tipini örnekler; sınavın okuma, dinleme, yazma ve konuşma bölümleri bu denemede yok.",
   },
 };
 
@@ -819,16 +832,22 @@ function markResult(correct, note, noRetry){
        Ustalık kaydı (recordAnswer) ise tekrarlarda da işler; asıl öğrenme
        orada gerçekleşiyor. */
     if(!currentEx.isRetry){
-      sessionScore.total++; if(correct) sessionScore.correct++;
+      const ilkDenemede = currentEx._attempts <= 1;
+      sessionScore.total++;
+      if(correct){ sessionScore.correct++; if(ilkDenemede) sessionScore.firstTry = (sessionScore.firstTry||0)+1; }
       if(testMode) testResults.push({cat: sessionQueue[sessionIdx].type, correct});
       if(correct){
-        const gain = currentEx._attempts <= 1 ? XP_FIRST_TRY : XP_SECOND_TRY;
+        const gain = ilkDenemede ? XP_FIRST_TRY : XP_SECOND_TRY;
         sessionXp += gain;
         if(awardXP(gain).goalJustReached) sessionGoalReached = true;
-        sessionCombo++;
+        /* İlk denemede yanlış yapıp ikincide bulan cevap combo'yu KIRMALI.
+           Eskiden kırmıyordu: "ardışık doğru" ödülü olan 5'li combo bonusu,
+           yanlış cevaplara rağmen kazanılabiliyordu ve rozet öğrencinin
+           gerçek performansını göstermiyordu. */
+        if(ilkDenemede) sessionCombo++; else sessionCombo = 0;
         /* Her 5'li combo küçük bir ek ödül verir — ardışık doğruyu sürdürmek
            tek tek doğrudan daha değerli olsun diye. */
-        if(sessionCombo % COMBO_STEP === 0){
+        if(sessionCombo > 0 && sessionCombo % COMBO_STEP === 0){
           sessionXp += XP_COMBO;
           if(awardXP(XP_COMBO).goalJustReached) sessionGoalReached = true;
         }
@@ -857,7 +876,14 @@ function markResult(correct, note, noRetry){
     /* Doğru bilinince de yazılışı gösteriyoruz — hem cevap kontrolü aksan/noktalama
        farkını görmezden geldiği için (norm() diyakritik-duyarsız), hem de dinleme
        sorularında (answer Türkçe olabiliyor) Romence yazılışı hiç görünmüyordu. */
-    const spellingLine = currentEx.roDisplay
+    /* Çoktan seçmelide doğru şık zaten ekranda: "Yazılışı: cinstit" satırı
+       tıkladığı kelimeyi ikinci kez göstermekten başka bir şey yapmıyordu.
+       Yalnızca ek bilgi taşıdığında (Romence kaynak, tamamlanmış cümle…)
+       basılıyor. Yazarak cevapta ise her zaman değerli: doğru diyakritiği
+       orada gösteriyoruz. */
+    const yazilisEkBilgi = currentEx.kind !== "mc"
+      || norm(String(currentEx.roDisplay||"")) !== norm(String(currentEx.answer||""));
+    const spellingLine = (currentEx.roDisplay && yazilisEkBilgi)
       ? `<div style="margin-top:4px;color:var(--ink-dim);font-size:.85rem">Yazılışı: <b style="color:var(--ink)">${currentEx.roDisplay}</b></div>`
       : "";
     /* Doğru bildi ama diyakritikleri atladıysa (norm() bunu görmezden geliyor)
@@ -937,6 +963,12 @@ function grantSessionEndXP(wasTest){
      15 XP kazanıyordu, yani sınavı hızlıca geçmek XP toplamanın kestirme yolu
      oluyordu. Artık bonus başarıya oranlı (en az yarısı garanti ki sınava
      girmek hiç caydırıcı olmasın). */
+  /* Hiç soru cevaplanmadan bitirilen tur/sınav ödül vermez. Eskiden
+     "Pratiğe Başla → Turu burada bitir" +5 XP, "Sınavı Başlat → Sınavı burada
+     bitir" +15 XP kazandırıyordu: günlük hedef 40 XP olduğu için seri, tek bir
+     soru cevaplamadan üç tıklamayla korunabiliyordu ve sınav geçmişi 0/0
+     kayıtlarıyla doluyordu. */
+  if(sessionScore.total === 0) return;
   let bonus = wasTest ? XP_TEST_END : XP_SESSION_END;
   if(wasTest && sessionScore.total > 0){
     const oran = sessionScore.correct / sessionScore.total;
@@ -1007,6 +1039,12 @@ function renderSessionDone(){
     <div class="pill">Tur Tamamlandı</div>
     <div class="scoreringwrap">${scoreRingSVG(pct)}</div>
     <p class="fraction">${sessionScore.correct}/${sessionScore.total} doğru${
+      /* Sınava hazırlıkta anlamlı olan sayı İLK DENEME doğruluğu: ikinci
+         denemede bulunan cevap da "doğru" sayılınca öğrenci kendi zayıfını
+         göremiyordu. İki sayı farklıysa ikisini de gösteriyoruz. */
+      (sessionScore.firstTry||0) < sessionScore.correct
+        ? ` <span style="font-size:.6em;color:var(--ink-dim)">· ilk denemede ${sessionScore.firstTry||0}</span>`
+        : ""}${
       sessionQueue.filter(x=>x._retry).length
         ? ` <span style="font-size:.6em;color:var(--ink-dim)">· ${sessionQueue.filter(x=>x._retry).length} tekrar sorusu</span>`
         : ""}</p>
@@ -1036,6 +1074,24 @@ function summarizeByCat(results){
   });
   return cats;
 }
+/* Bu seviyeden sonra gelen, içeriği hazır ilk seviye (yoksa null). */
+function sonrakiHazirSeviye(lvl){
+  const sira = Object.keys(LEVELS);
+  const i = sira.indexOf(lvl);
+  if(i < 0) return null;
+  return sira.slice(i+1).find(k=> LEVELS[k] && LEVELS[k].ready) || null;
+}
+/* Sınavı geçen kullanıcıya "A2 seviyesine hazırsın" deniyordu — A2 sınavını
+   yeni bitirmiş birine ters yönde bir cümle. Metin artık tamamlanan seviyeyi
+   söylüyor, bir sonraki hazırsa oraya yönlendiriyor. */
+function basariMesaji(){
+  const su = level().ad;
+  const sonraki = sonrakiHazirSeviye(currentLevel);
+  return sonraki
+    ? `Harika, ${su} seviyesini tamamladın — ${LEVELS[sonraki].ad}'e geçebilirsin! 🎉`
+    : `Harika, ${su} seviyesini tamamladın! 🎉`;
+}
+
 function renderTestResult(pct){
   const last = STATE.testHistory[STATE.testHistory.length-1];
   const ifadeEtiket = (last.level||currentLevel)==="B1" ? "Zıt Anlam" : "Kalıp İfade";
@@ -1052,7 +1108,7 @@ function renderTestResult(pct){
     <div class="pill">Deneme Sınavı Sonucu</div>
     <div class="scoreringwrap">${scoreRingSVG(pct)}</div>
     <p class="fraction">${last.score}/${last.total} doğru</p>
-    <p style="color:var(--ink-dim)">${pct>=80?`Harika, ${level().ad} seviyesine hazırsın! 🎉`:pct>=60?"İyi gidiyorsun, biraz daha tekrar et.":"Pratik'e dönüp zayıf konuları tekrarla."}</p>
+    <p style="color:var(--ink-dim)">${pct>=80?basariMesaji():pct>=60?"İyi gidiyorsun, biraz daha tekrar et.":"Pratik'e dönüp zayıf konuları tekrarla."}</p>
     ${rewardBoxHTML()}
   </div>
   <div class="card"><h2 style="margin-top:0">Bölüm Bazlı Sonuç</h2>${rows}</div>
@@ -1060,12 +1116,25 @@ function renderTestResult(pct){
   document.getElementById('backBtn').addEventListener('click', goHome);
 }
 
+/* Yarım kalmış bir tur/sınav var mı? index.html'deki servis çalışanı
+   güncellemesi buna bakıp sayfayı yenilemeyi erteliyor: yayın anında soru
+   ekranındaki kullanıcının turu sessizce silinmemeli. */
+function turDevamEdiyorMu(){
+  if(!(Array.isArray(sessionQueue) && sessionQueue.length > 0 && sessionIdx < sessionQueue.length)) return false;
+  /* Kuyruk tur bitince ya da ana ekrana dönülünce temizlenmiyor (bir sonraki
+     tur zaten üzerine yazıyor), bu yüzden tek başına güvenilir değil.
+     Ekranda gerçekten cevaplanacak bir soru duruyor mu, ona bakıyoruz. */
+  return !!(document.getElementById('opts')
+         || document.getElementById('typeInput')
+         || document.getElementById('orderBank'));
+}
+
 /* n verilmezse 10 soru. Doğrudan olay dinleyicisi olarak da bağlanabildiği
    için (o zaman n bir Event nesnesi olur) tip kontrolü şart. */
 function startPractice(n){
   const count = (typeof n === "number" && n > 0) ? n : 10;
   sessionQueue = buildSessionQueue(count, ratiosForFilter(practiceFilter, currentLevel));
-  sessionIdx = 0; sessionScore = {correct:0,total:0}; testMode=false;
+  sessionIdx = 0; sessionScore = {correct:0,total:0,firstTry:0}; testMode=false;
   resetSessionRewards();
   nextExercise();
 }
@@ -1074,10 +1143,15 @@ function startPractice(n){
    sayaçları ve ilerleme ekranı yalnızca aktif seviyenin havuzunu sayar, böylece
    A1 ile A2 ilerlemesi birbirine karışmaz. */
 function levelItemIds(L){
-  const ids = L.vocab().map(itemId)
+  let ids = L.vocab().map(itemId)
     .concat(L.verbs().map(itemId))
     .concat(L.sentences().map(itemId));
-  return L.expressions ? ids.concat(L.expressions().map(itemId)) : ids;
+  if(L.expressions) ids = ids.concat(L.expressions().map(itemId));
+  /* Gramer maddelerinin id listesi olan seviyelerde (B1) onlar da sayılır —
+     yoksa "Karşılaşılan 9/844" gibi bir sayı, o turda çözülen gramer
+     sorularını hiç görmüyordu. */
+  if(L.gramIds) ids = ids.concat(L.gramIds());
+  return ids;
 }
 
 function renderPracticeHome(){
@@ -1133,7 +1207,7 @@ function renderPracticeHome(){
 function startTest(){
   testMode = true; testResults=[];
   sessionQueue = buildSessionQueue(24, ratiosForFilter("mixed", currentLevel));
-  sessionIdx = 0; sessionScore = {correct:0,total:0};
+  sessionIdx = 0; sessionScore = {correct:0,total:0,firstTry:0};
   resetSessionRewards();
   nextExercise();
 }
@@ -1150,7 +1224,11 @@ function renderTestHome(){
   root().innerHTML = `<div class="card">
     <div class="pill">${level().ad} Deneme Sınavı</div>
     <p style="color:var(--ink-dim);font-size:.9rem;line-height:1.5">${level().testAciklama}</p>
-    <button class="btn" id="startTestBtn" style="width:100%;margin-top:6px">Sınavı Başlat</button>
+    <p style="color:var(--ink-dim);font-size:.82rem;line-height:1.6;margin:10px 0 0">
+      <b>24 soru · süre sınırı yok · her soruda tek hak.</b>
+      Pratikteki "tekrar dene" burada yok; yanlış cevaptan sonra doğrusu gösterilir ve sınav devam eder.
+      Sonuçta bölüm bazlı dağılımı görürsün; sonuç geçmişe kaydedilir.</p>
+    <button class="btn" id="startTestBtn" style="width:100%;margin-top:12px">Sınavı Başlat</button>
   </div>
   ${hist.length? `<div class="card"><h2 style="margin-top:0">Geçmiş Sonuçlar</h2>${histRows}</div>`:""}`;
   document.getElementById('startTestBtn').addEventListener('click', startTest);
@@ -1175,9 +1253,32 @@ function renderDashboard(){
     return {mastered,total,seen,pct: total? Math.round(100*scoreSum/(total*MAX_BOX)):0};
   }
   const vs = stats(vocIds), fs = stats(verIds), cs = stats(sentIds), is = stats(ifadeIds);
+  /* GRAMER İSTATİSTİĞİ
+     Gramer havuzu vocab/verbs gibi listelenebilir değil — üreticiler maddeyi
+     çağrı anında seçiyor. Bu yüzden toplam sayı yerine KARŞILAŞILAN maddeleri
+     kimlik önekinden sayıyoruz; ekranda da "karşılaşılan" diye yazıyor,
+     yoksa 0/0 gibi yanlış bir kesir çıkardı. Gramer daha önce İlerleme
+     ekranında hiç görünmüyordu, hâlbuki her turda ve sınavda soruluyor. */
+  function gramerStats(){
+    const on = L.gramPrefix;
+    if(!on) return null;
+    const anahtarlar = Object.keys(STATE.mastery||{}).filter(k=> k.indexOf(on)===0);
+    let mastered=0, scoreSum=0;
+    anahtarlar.forEach(k=>{
+      const e=STATE.mastery[k], box=e?e.box:0, streak=e?e.streak:0;
+      scoreSum += box + Math.min(streak,LEVEL_UP_STREAK)/LEVEL_UP_STREAK;
+      if(box>=MAX_BOX) mastered++;
+    });
+    const n = anahtarlar.length;
+    return {seen:n, mastered, pct: n? Math.round(100*scoreSum/(n*MAX_BOX)) : 0};
+  }
+  /* Id listesi olan seviyede gramer de kelime/fiil gibi ölçülüyor (gerçek
+     payda); olmayan seviyelerde eski "karşılaşılan" sayımı sürüyor. */
+  const gs = L.gramIds ? Object.assign(stats(L.gramIds()), {gercekPayda:true}) : gramerStats();
   const st = STATE.streak || {current:0, longest:0, freezes:0};
   const w = L.dashWeights;
-  const overallPct = Math.round(vs.pct*w.voc + fs.pct*w.ver + cs.pct*w.cum + is.pct*w.ifade);
+  const gramPct = (gs && w.gram) ? gs.pct : 0;
+  const overallPct = Math.round(vs.pct*w.voc + fs.pct*w.ver + cs.pct*w.cum + is.pct*w.ifade + gramPct*(w.gram||0));
   const temaAdlari = L.themeNames();
   let themeRows = "";
   Object.keys(temaAdlari).forEach(t=>{
@@ -1207,15 +1308,17 @@ function renderDashboard(){
   </div>
   <div class="card">
     <h2 style="margin-top:0">Genel İlerleme (ustalık)</h2>
-    <div class="row"><span>Kelime bilgisi</span><span>%${vs.pct} · ustalaşılan ${vs.mastered}/${vs.total}</span></div>
+    <div class="row"><span>Kelime bilgisi</span><span>%${vs.pct} · gördüğün ${vs.seen}/${vs.total} · ustalaştığın ${vs.mastered}</span></div>
     <div class="barwrap"><div class="bar" style="width:${vs.pct}%"></div></div>
-    <div class="row" style="margin-top:12px"><span>Fiil çekimi</span><span>%${fs.pct} · ustalaşılan ${fs.mastered}/${fs.total}</span></div>
+    <div class="row" style="margin-top:12px"><span>Fiil çekimi</span><span>%${fs.pct} · gördüğün ${fs.seen}/${fs.total} · ustalaştığın ${fs.mastered}</span></div>
     <div class="barwrap"><div class="bar" style="width:${fs.pct}%"></div></div>
-    <div class="row" style="margin-top:12px"><span>Cümle kurma${L.dynamicSentence ? " (sabit havuz)" : ""}</span><span>%${cs.pct} · ustalaşılan ${cs.mastered}/${cs.total}</span></div>
+    <div class="row" style="margin-top:12px"><span>Cümle kurma${L.dynamicSentence ? " (sabit havuz)" : ""}</span><span>%${cs.pct} · gördüğün ${cs.seen}/${cs.total} · ustalaştığın ${cs.mastered}</span></div>
     <div class="barwrap"><div class="bar" style="width:${cs.pct}%"></div></div>
-    ${ifadeIds.length ? `<div class="row" style="margin-top:12px"><span>${currentLevel==="B1" ? "Zıt anlam / türetme" : "Kalıp ifadeler"}</span><span>%${is.pct} · ustalaşılan ${is.mastered}/${is.total}</span></div>
+    ${ifadeIds.length ? `<div class="row" style="margin-top:12px"><span>${currentLevel==="B1" ? "Zıt anlam / türetme" : "Kalıp ifadeler"}</span><span>%${is.pct} · gördüğün ${is.seen}/${is.total} · ustalaştığın ${is.mastered}</span></div>
     <div class="barwrap"><div class="bar" style="width:${is.pct}%"></div></div>` : ""}
-    <p style="color:var(--ink-dim);font-size:.78rem;margin:12px 0 0">"Ustalık" bir kelime/fiili/cümleyi üst üste 3 kez doğru bilince artar — bu yüzden yavaş ama kalıcı ilerler. "Karşılaşılan" ise en az bir kez soruldu demek. Dinamik (sınırsız) cümleler her seferinde yeni olduğu için ustalık takibine dahil değil, sadece pratik amaçlı.</p>
+    ${gs ? `<div class="row" style="margin-top:12px"><span>Gramer</span><span>%${gs.pct} · gördüğün ${gs.seen}${gs.gercekPayda ? "/"+gs.total : " madde"} · ustalaştığın ${gs.mastered}</span></div>
+    <div class="barwrap"><div class="bar" style="width:${gs.pct}%"></div></div>` : ""}
+    <p style="color:var(--ink-dim);font-size:.78rem;margin:12px 0 0">İki sayı farklı şeyi ölçüyor: <b>yüzde</b> her öğenin hangi tekrar kutusunda olduğunu birlikte sayar, tek bir doğru cevapta bile biraz ilerler. <b>"Ustalaştığın"</b> ise yalnızca son kutuya ulaşan, yani üst üste 3 kez doğru bildiğin öğeleri sayar — bu yüzden bir süre 0'da kalması normaldir. <b>"Gördüğün"</b> en az bir kez soruldu demek.${gs ? " Gramerin toplam madde sayısı yazmıyor, çünkü sorular havuzdan anlık üretiliyor; yalnızca karşılaştığın maddeler sayılıyor." : ""}${L.dynamicSentence ? " Dinamik (sınırsız) cümleler her seferinde yeni olduğu için ustalık takibine dahil değil, sadece pratik amaçlı." : ""}</p>
   </div>
   <div class="card"><h2 style="margin-top:0">Konu Bazlı Kelime Ustalığı</h2>${themeRows}</div>
   <div class="card"><h2 style="margin-top:0">Genel</h2>
@@ -1325,6 +1428,8 @@ function switchTab(tab){
      yeniden çizilmeli — yoksa o seviye seçiliyken A1 içeriği çiziliyordu.
      selectLevel bu dalda switchTab'ı çağırmaz, döngü olmaz. */
   if(!seviyeHazir(currentLevel)){ selectLevel(currentLevel); return; }
+  /* Oturum açıldıktan sonraki ilk çizimde kayıtlı seviyeye dönüyoruz. */
+  if(seviyeyiGeriYukle()) return;
   updateGameBar();
   document.querySelectorAll('.tab').forEach(t=>{
     const aktif = t.getAttribute('data-tab')===tab;
@@ -1341,10 +1446,33 @@ function switchTab(tab){
    İlerleme motoruyla çalışır; hazır olmayan seviye "yakında" ekranını gösterir.
    Seviye değişince yarım kalan bir tur varsa terk ediliyor (ana ekrana dönülüyor),
    çünkü sessionQueue bir önceki seviyenin havuzundan üretilmişti. */
+/* SEÇİLEN SEVİYE HATIRLANIYOR
+   Tema ve ses tercihi localStorage'da tutuluyordu ama seviye tutulmuyordu:
+   uygulama her açılışta A1'e dönüyordu, A2/B1 çalışan kullanıcı her oturumda
+   iki dokunuş fazladan yapıyordu. Cihaza özel bir tercih olduğu için ortak
+   STATE'e değil, tema gibi localStorage'a yazılıyor. */
+const LEVEL_KEY = "romence_level";
+function seviyeyiKaydet(lvl){
+  try{ localStorage.setItem(LEVEL_KEY, lvl); }catch(e){ /* erişilemiyorsa sorun değil */ }
+}
+let seviyeGeriYuklendi = false;
+function seviyeyiGeriYukle(){
+  if(seviyeGeriYuklendi) return false;
+  seviyeGeriYuklendi = true;               // selectLevel switchTab'ı çağırıyor, döngü olmasın
+  let kayitli = null;
+  try{ kayitli = localStorage.getItem(LEVEL_KEY); }catch(e){}
+  if(kayitli && kayitli !== currentLevel && seviyeHazir(kayitli)){
+    selectLevel(kayitli);
+    return true;
+  }
+  return false;
+}
+
 function selectLevel(lvl){
   if(!LEVELS[lvl]) return;
   const oncekiSeviye = currentLevel;
   currentLevel = lvl;
+  if(LEVELS[lvl].ready) seviyeyiKaydet(lvl);
   /* Yarım bırakılmış tur/sınav durumu yeni seviyeye taşınmasın: bir sonraki
      tur zaten hepsini sıfırlıyor ama arada testMode=true kalması sonucu
      yanlış seviyeye yazma riski taşıyor. */
@@ -1406,13 +1534,42 @@ document.querySelectorAll('.paletteswatch').forEach(b=> b.addEventListener('clic
     t.setAttribute('aria-expanded', acik ? 'true' : 'false');
   });
 })();
+/* SEKMEYE BASINCA TUR SESSİZCE İPTAL OLUYORDU.
+   Soru ekranındayken üstteki sekmeye dokunmak turu hiç uyarmadan siliyordu;
+   mobilde sekme çubuğu sorunun hemen üstünde olduğu için kazara dokunmak çok
+   kolay. Yerel confirm() kullanmıyoruz (mobilde çirkin, otomatik testte
+   bloklar): ilk dokunuş kartın içine bir uyarı şeridi koyuyor, ikinci dokunuş
+   (ya da şeritteki düğme) turu bırakıyor. */
+let sekmeOnayBekleyen = null;
+function sekmeOnayiTemizle(){
+  sekmeOnayBekleyen = null;
+  const u = document.getElementById('turCikisUyari');
+  if(u) u.remove();
+}
+function sekmeyeGec(tab){
+  if(typeof turDevamEdiyorMu !== "function" || !turDevamEdiyorMu()){
+    sekmeOnayiTemizle(); switchTab(tab); return;
+  }
+  if(sekmeOnayBekleyen === tab){ sekmeOnayiTemizle(); switchTab(tab); return; }
+  sekmeOnayiTemizle();
+  sekmeOnayBekleyen = tab;
+  const kart = document.querySelector('#app-root .card');
+  if(!kart){ switchTab(tab); return; }
+  const uyari = el(`<div id="turCikisUyari" class="feedback show bad" style="margin-top:10px">
+    <div class="ficon">!</div>
+    <div class="ftext"><b>Turdan çıkılsın mı?</b> Bu turda kazandıkların kaydedildi ama tur bitirme ödülünü alamazsın.
+    <button class="btn secondary" id="turCikisOnay" style="margin-top:8px">Turdan çık</button></div></div>`);
+  kart.appendChild(uyari);
+  const btn = document.getElementById('turCikisOnay');
+  if(btn) btn.addEventListener('click', ()=>{ sekmeOnayiTemizle(); switchTab(tab); });
+}
 document.querySelectorAll('.tab').forEach(t=>{
-  t.addEventListener('click', ()=> switchTab(t.getAttribute('data-tab')));
+  t.addEventListener('click', ()=> sekmeyeGec(t.getAttribute('data-tab')));
   /* Sekmeler <div> olduğu için klavye erişimi yoktu; tabindex index.html'de
      verildi, tuş davranışını burada tamamlıyoruz (Enter ve Boşluk). */
   t.addEventListener('keydown', e=>{
     if(e.key==="Enter" || e.key===" " || e.key==="Spacebar"){
-      e.preventDefault(); switchTab(t.getAttribute('data-tab'));
+      e.preventDefault(); sekmeyeGec(t.getAttribute('data-tab'));
     }
   });
 });

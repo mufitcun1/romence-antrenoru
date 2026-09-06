@@ -233,9 +233,11 @@ try {
   const yuksekPuanMetni = sinavBitti
     ? (await page.evaluate(()=> renderTestResult(95)), await page.locator("#app-root").innerText())
     : "";
-  kontrol("Yüksek puan yorumu A2 diyor, A1 demiyor",
-    yuksekPuanMetni.includes("A2 seviyesine hazırsın") && !yuksekPuanMetni.includes("A1"),
-    yuksekPuanMetni.split("\n").find(l=>l.includes("hazırsın")) || "");
+  kontrol("Yüksek puan yorumu tamamlanan seviyeyi söylüyor, ters yönde değil",
+    yuksekPuanMetni.includes("A2 seviyesini tamamladın")
+      && !yuksekPuanMetni.includes("A2 seviyesine hazırsın")
+      && !yuksekPuanMetni.includes("A1"),
+    yuksekPuanMetni.split("\n").find(l=>l.includes("tamamladın")) || "");
 
   /* Sınav geçmişi seviyeye göre ayrılmalı: A2 sonucu A1'in geçmişinde
      görünmemeli (aksi halde kullanıcı A1 sınavını hiç yapmadan A1 ekranında
@@ -436,6 +438,155 @@ try {
   kontrol("Ayırt edici parantez korunuyor (o (erkek) -> 'o' kabul edilmiyor)",
     await page.evaluate(()=> !anlamSecenekleri("o (erkek)").includes("o")));
 
+  /* ---------- A2 alıştırma üreticileri ----------
+     A2'nin üreticileri data-a2.js'de ayrı birer kopya; A1 için yazılan
+     düzeltmeler oraya kendiliğinden gelmiyor. Bu blok her birini madde
+     bazında sınıyor ki bir daha sessizce ayrışmasınlar. */
+  console.log("\n5b) A2 alıştırma üreticileri");
+
+  const a2tas = await page.evaluate(()=>{
+    const ozel = ozelAdSeti();
+    let bh = [], np = [], esitsiz = 0, n = 0;
+    SENTENCES_A2.forEach(s=>{
+      for(let k=0;k<20;k++){
+        const e = exerciseForSentenceA2({ro:s[0], tr:s[1], id:s[2]});
+        if(e.kind !== "order") continue;
+        n++;
+        e.words.forEach(w=>{
+          if(/^[A-ZĂÂÎȘȚ]/.test(w) && !ozel.has(w)) bh.push(s[0]+" -> "+w);
+          if(/[,;:!?.]$/.test(w)) np.push(s[0]+" -> "+w);
+        });
+        if(norm(e.words.slice().sort().join(" ")) !== norm(e.answer.split(" ").sort().join(" "))) esitsiz++;
+        break;
+      }
+    });
+    return {n, bh, np, esitsiz};
+  });
+  kontrol("A2 dizme taşları cümle başı büyük harfini ele vermiyor",
+    a2tas.bh.length === 0, `${a2tas.bh.length}/${a2tas.n} — ` + a2tas.bh.slice(0,2).join(" | "));
+  kontrol("A2 dizme taşlarında iç noktalama yok",
+    a2tas.np.length === 0, `${a2tas.np.length}/${a2tas.n} — ` + a2tas.np.slice(0,2).join(" | "));
+  kontrol("A2 nötrleştirilen taşlar cevapla hâlâ eşleşiyor", a2tas.esitsiz === 0);
+
+  const a2tire = await page.evaluate(()=>{
+    let bayraksiz = 0;
+    for(let i=0;i<60;i++){
+      if(!exerciseForGrammarA2("imppron").strictHyphen) bayraksiz++;
+      if(!exerciseForGrammarA2("klitik").strictHyphen)  bayraksiz++;
+    }
+    /* ui.js'in strictHyphen'da kullandığı karşılaştırıcının aynısı */
+    const esitle = x => normTire(String(x||"").replace(/^-+|-+$/g,""));
+    return {bayraksiz, ayirtEdiyor: esitle("Las-o!") !== esitle("laso")
+                                 && esitle("s-a dus") !== esitle("sa dus"),
+            hosgorulu: esitle("-o") === esitle("o")};
+  });
+  kontrol("Tire öğreten A2 soruları strictHyphen taşıyor", a2tire.bayraksiz === 0, String(a2tire.bayraksiz));
+  kontrol("Tiresiz yazım artık doğru sayılmıyor (Las-o! ≠ laso)", a2tire.ayirtEdiyor);
+  kontrol("Baş/son tire hâlâ hoşgörülü (-o = o)", a2tire.hosgorulu);
+
+  const a2gram = await page.evaluate(()=>{
+    const konular = ["dativ","dativpron","demons","conj3","imperativ","imppron","klitik","fonetik","reflex","ordinal","pe","compar"];
+    const out = {};
+    konular.forEach(k=>{
+      const ids = new Set();
+      for(let i=0;i<300;i++) ids.add(exerciseForGrammarA2(k).id);
+      out[k] = ids.size;
+    });
+    return out;
+  });
+  const tekIdli = Object.keys(a2gram).filter(k=> a2gram[k] < 2);
+  kontrol("A2 gramer maddeleri konu başına tek id paylaşmıyor",
+    tekIdli.length === 0, tekIdli.join(", ") || JSON.stringify(a2gram));
+
+  const a2celdirici = await page.evaluate(()=>{
+    const fiilMi = ro => /^a\s/.test(ro);
+    let turKarisik = 0, ayniSik = 0, esAnlamli = 0, mc = 0;
+    for(let i=0;i<3000;i++){
+      const v = VOCAB_A2[Math.floor(Math.random()*VOCAB_A2.length)];
+      const e = exerciseForVocabA2(v);
+      if(e.kind !== "mc") continue;
+      mc++;
+      if(new Set(e.options.map(norm)).size < e.options.length) ayniSik++;
+      if(/Romence nedir/.test(e.prompt)){
+        if(e.options.some(o=> fiilMi(o) !== fiilMi(v[2]))) turKarisik++;
+        const grup = ES_ANLAMLI_A2.find(g=> g.indexOf(v[2]) >= 0);
+        if(grup && e.options.some(o=> o !== v[2] && grup.indexOf(o) >= 0)) esAnlamli++;
+      }
+    }
+    return {turKarisik, ayniSik, esAnlamli, mc};
+  });
+  kontrol("A2 çeldiricileri cevapla aynı sözcük türünden",
+    a2celdirici.turKarisik === 0, `${a2celdirici.turKarisik}/${a2celdirici.mc}`);
+  kontrol("A2'de hiçbir soruda aynı şık iki kez yok", a2celdirici.ayniSik === 0);
+  kontrol("Eş anlamlı kelime ikinci doğru cevap olarak şıklara girmiyor",
+    a2celdirici.esAnlamli === 0, `${a2celdirici.esAnlamli} soru`);
+
+  /* Yazarak mod yalnızca 3. kutudan sonra açılıyor; kutuyu geçici doldurup
+     gerçek kod yolunu sınıyoruz. */
+  const a2yazarak = await page.evaluate(()=>{
+    const yedek = JSON.stringify(STATE.mastery);
+    const dene = (ro, yon) => {
+      const v = VOCAB_A2.find(x=> x[2] === ro);
+      STATE.mastery[v[5]] = {box:5, seen:5, correct:5};
+      for(let i=0;i<200;i++){
+        const e = exerciseForVocabA2(v);
+        if(e.kind === "type" && (yon === "ro2tr" ? /ne demek/ : /Romence yaz/).test(e.prompt)) return e;
+      }
+      return null;
+    };
+    const cumnat = dene("cumnat", "ro2tr");
+    const onest  = dene("onest",  "tr2ro");
+    const sonuc = {
+      glossParcasi: !!cumnat && [cumnat.answer].concat(cumnat.answerAlts||[]).some(a=> norm(a) === norm("kayınbirader")),
+      esAnlamliKabul: !!onest && (onest.answerAlts||[]).indexOf("cinstit") >= 0
+    };
+    STATE.mastery = JSON.parse(yedek);
+    return sonuc;
+  });
+  kontrol("A2 yazarak kelimede çok karşılıklı gloss'un tek parçası kabul ediliyor", a2yazarak.glossParcasi);
+  kontrol("A2 yazarak kelimede eş anlamlı Romence karşılık kabul ediliyor", a2yazarak.esAnlamliKabul);
+
+  const a2cumle = await page.evaluate(()=>{
+    const etiketsiz = SENTENCES_A2
+      .filter(r=> /^(El|Ea|Ei|Ele)\b/.test(r[0]) && /^(O|Onlar)\s/.test(r[1])
+               && !/\((erkek|kadın|erkekler|kadınlar)\)/.test(r[1]))
+      .map(r=> r[1]);
+    const s = SENTENCES_A2.find(x=> x[0] === "Ne vom întâlni săptămâna viitoare.");
+    let alt = null;
+    for(let i=0;i<200 && s;i++){
+      const e = exerciseForSentenceA2({ro:s[0], tr:s[1], id:s[2]});
+      if(e.kind === "type" && /Romence yaz/.test(e.prompt)){ alt = e.answerAlts || []; break; }
+    }
+    return {etiketsiz, gelecekAlt: (alt||[]).indexOf("O să ne întâlnim săptămâna viitoare.") >= 0};
+  });
+  kontrol("Cinsiyet belirsiz A2 cümlelerinde Türkçe tarafta etiket var",
+    a2cumle.etiketsiz.length === 0, a2cumle.etiketsiz.join(" | "));
+  kontrol("Gelecek zamanın ikinci biçimi de doğru sayılıyor", a2cumle.gelecekAlt);
+
+  const a2ipucu = await page.evaluate(()=>{
+    let fonSizinti = 0, fonAciklamasiz = 0, cinsSoruda = 0, cinsAciklamada = 0, cipYanlis = 0, cift = 0;
+    for(let i=0;i<120;i++){
+      const f = exerciseForGrammarA2("fonetik");
+      if(f.hint !== "Ses bilgisi") fonSizinti++;
+      if(!f.aciklama) fonAciklamasiz++;
+      const d = exerciseForGrammarA2("dativ");
+      if(/\((dişil|eril|nötr)\)/.test(d.prompt)) cinsSoruda++;
+      if(/(dişil|eril|nötr)[^"]* bir isim/.test(String(d.aciklama||""))) cinsAciklamada++;
+      const m = exerciseForGrammarA2("demons");
+      if(/\((eril|dişil|nötr)/.test(m.prompt)) cinsSoruda++;
+      const v = exerciseForVerbA2(VERBS_A2[Math.floor(Math.random()*VERBS_A2.length)]);
+      if(!/^Fiil çekimi · /.test(v.hint)) cipYanlis++;
+      if((v.hint.match(/3\. şahıs/g) || []).length > 1) cift++;
+    }
+    return {n:120, fonSizinti, fonAciklamasiz, cinsSoruda, cinsAciklamada, cipYanlis, cift};
+  });
+  kontrol("Ses bilgisi ipucu kuralı cevaptan önce ele vermiyor",
+    a2ipucu.fonSizinti === 0 && a2ipucu.fonAciklamasiz === 0, JSON.stringify(a2ipucu));
+  kontrol("A2 dativ/işaret sorusunda cinsiyet soruda değil, açıklamada",
+    a2ipucu.cinsSoruda === 0 && a2ipucu.cinsAciklamada === a2ipucu.n, JSON.stringify(a2ipucu));
+  kontrol("Fiil ipucu çipi ne olduğunu söylüyor ve kendini tekrarlamıyor",
+    a2ipucu.cipYanlis === 0 && a2ipucu.cift === 0, JSON.stringify(a2ipucu));
+
   /* Sınavda ikinci hak yok: yanlış cevap sonrası soru kapanmalı. */
   await page.evaluate(()=> selectLevel("A1"));
   await page.locator('.tab[data-tab="test"]').click();
@@ -528,9 +679,326 @@ try {
     /Başlangıçta 2 dondurman var/.test(dashMetin),
     (dashMetin.match(/Bir günü kaçırdığında[^\n]*/) || [""])[0].slice(0,120));
 
+  /* ---------- Kalite kontrol turu 2: arayüz düzeltmeleri ---------- */
+  console.log("\n7c) Arayüz düzeltmeleri");
+
+  const seviyeHafiza = await page.evaluate(()=>{
+    selectLevel("A2");
+    const yazildi = localStorage.getItem("romence_level");
+    /* Açılış davranışını taklit et: seviye A1'e düşmüş, hafıza tazelenmemiş. */
+    currentLevel = "A1"; seviyeGeriYuklendi = false;
+    const dondu = seviyeyiGeriYukle();
+    return {yazildi, dondu, aktif: currentLevel,
+            cip: (document.querySelector(".levelchip.active")||{}).innerText};
+  });
+  kontrol("Seçilen seviye localStorage'a yazılıyor", seviyeHafiza.yazildi === "A2", String(seviyeHafiza.yazildi));
+  kontrol("Açılışta kayıtlı seviyeye dönülüyor",
+    seviyeHafiza.dondu === true && seviyeHafiza.aktif === "A2", JSON.stringify(seviyeHafiza));
+
+  const turDurumu = await page.evaluate(()=>{
+    goHome();
+    const anaEkran = turDevamEdiyorMu();
+    startPractice(10);
+    const turda = turDevamEdiyorMu();
+    goHome();
+    return {anaEkran, turda, sonra: turDevamEdiyorMu()};
+  });
+  kontrol("Tur devam ediyor mu bilgisi doğru (yenileme ertelemesi buna bakıyor)",
+    turDurumu.anaEkran === false && turDurumu.turda === true && turDurumu.sonra === false,
+    JSON.stringify(turDurumu));
+  kontrol("index.html yenilemeyi tur ortasında ertelemek üzere bu bilgiyi kullanıyor",
+    /turDevamEdiyorMu/.test(await (await fetch(`http://localhost:${PORT}/index.html`)).text()));
+
+  const mesaj = await page.evaluate(()=>{
+    const a1 = (selectLevel("A1"), basariMesaji());
+    const a2 = (selectLevel("A2"), basariMesaji());
+    return {a1, a2};
+  });
+  kontrol("Sınav sonucu tamamlanan seviyeyi söylüyor, ters yönde değil",
+    !/A2 seviyesine hazırsın/.test(mesaj.a2) && /A2 seviyesini tamamladın/.test(mesaj.a2),
+    mesaj.a2);
+  kontrol("Sonraki seviye hazırsa oraya yönlendiriyor", /A2'e geçebilirsin/.test(mesaj.a1), mesaj.a1);
+
+  await page.evaluate(()=> selectLevel("A2"));
+  await page.locator('.tab[data-tab="test"]').click();
+  await page.waitForSelector("#startTestBtn");
+  const sinavEkran = await page.locator("#app-root").innerText();
+  kontrol("Sınav ekranı tek hak kuralını baştan söylüyor",
+    /tek hak/.test(sinavEkran) && /süre sınırı yok/.test(sinavEkran),
+    (sinavEkran.match(/24 soru[^\n]*/) || [""])[0]);
+
+  const sinavCumle = await page.evaluate(()=>{
+    const sonuc = {a1:0, a2:0, toplam:0};
+    testMode = true;
+    for(let i=0;i<40;i++){
+      const s2 = SENTENCES_A2[i % SENTENCES_A2.length];
+      if(exerciseForSentenceA2({ro:s2[0], tr:s2[1], id:s2[2]}).kind !== "order") sonuc.a2++;
+      const s1 = FIXED_SENTENCES[i % FIXED_SENTENCES.length];
+      if(exerciseForSentence({ro:s1[0], tr:s1[1], id:s1[2]}).kind !== "order") sonuc.a1++;
+      sonuc.toplam++;
+    }
+    testMode = false;
+    return sonuc;
+  });
+  kontrol("Sınavda cümle sorusu serbest çeviri değil, dizme",
+    sinavCumle.a1 === 0 && sinavCumle.a2 === 0, JSON.stringify(sinavCumle));
+
+  const yazilis = await page.evaluate(()=>{
+    const oku = (ex, cevap) => {
+      currentEx = ex; renderExercise();
+      const fb = document.getElementById("feedback");
+      currentEx._yazilan = cevap;
+      markResult(true, null, true);
+      return fb.innerText;
+    };
+    testMode = false; sessionQueue = []; sessionIdx = 0;
+    const mc = oku({id:"t1", kind:"mc", prompt:"deneme", hint:"x",
+                    options:["cinstit","altul"], answer:"cinstit", roDisplay:"cinstit"}, "cinstit");
+    const mcBilgili = oku({id:"t2", kind:"mc", prompt:"deneme", hint:"x",
+                    options:["dürüst","namuslu"], answer:"dürüst", roDisplay:"onest"}, "dürüst");
+    const yaz = oku({id:"t3", kind:"type", prompt:"deneme", hint:"x",
+                    answer:"mâine", roDisplay:"mâine"}, "mâine");
+    return {mc, mcBilgili, yaz};
+  });
+  kontrol("Çoktan seçmelide gereksiz 'Yazılışı' satırı basılmıyor",
+    !/Yazılışı/.test(yazilis.mc), yazilis.mc.replace(/\n/g," "));
+  kontrol("Ek bilgi taşıyorsa çoktan seçmelide de gösteriliyor",
+    /Yazılışı: onest/.test(yazilis.mcBilgili), yazilis.mcBilgili.replace(/\n/g," "));
+  kontrol("Yazarak cevapta doğru yazılış hâlâ gösteriliyor",
+    /Yazılışı: mâine/.test(yazilis.yaz), yazilis.yaz.replace(/\n/g," "));
+
+  await page.evaluate(()=>{ goHome(); selectLevel("A2"); });
+  await page.locator('.tab[data-tab="dash"]').click();
+  await page.waitForSelector(".statgrid");
+  const dashA2 = await page.locator("#app-root").innerText();
+  await page.evaluate(()=> selectLevel("A1"));
+  await page.locator('.tab[data-tab="dash"]').click();
+  await page.waitForSelector(".statgrid");
+  const dashA1 = await page.locator("#app-root").innerText();
+  kontrol("İlerleme ekranında gramer satırı var", /Gramer/.test(dashA2));
+  kontrol("Dinamik cümle açıklaması yalnızca dinamik havuzu olan seviyede",
+    /Dinamik \(sınırsız\)/.test(dashA1) && !/Dinamik \(sınırsız\)/.test(dashA2));
+  kontrol("Yüzde ile ustalık farkı açıklanıyor",
+    /yalnızca son kutuya ulaşan/.test(dashA2));
+  await page.evaluate(()=> selectLevel("A2"));
+
   kontrol("Dizme ipucu metni işaretçi türüne göre seçiliyor",
     /(sürükle|dokun)/.test(await page.evaluate(()=> ORDER_HINT)),
     await page.evaluate(()=> ORDER_HINT));
+
+  /* ---------- 9. B1 kalite kontrol düzeltmeleri ---------- */
+  console.log("\n9) B1 kalite kontrol düzeltmeleri");
+  await page.evaluate(()=> selectLevel("B1"));
+  await page.locator('.tab[data-tab="practice"]').click();
+  await page.waitForSelector("#startBtn", {timeout: 5000});
+
+  /* 9.1 Senkron kendi kendini yeniden kurmuyor (sonsuz 4 sn'lik çevrim).
+     Eskiden syncNow → persistNow → doPublish → syncSoon zinciri kapanmıyordu:
+     uygulama boştayken bile ekran her ~5 saniyede yeniden çiziliyordu. */
+  const cevrim = await page.evaluate(async ()=>{
+    const gercek = syncSoon;
+    let sayac = 0;
+    syncSoon = ()=> { sayac++; };
+    syncApplying = true;  await doPublish();
+    const uygularken = sayac;
+    syncApplying = false; await doPublish();
+    const normalde = sayac;
+    syncSoon = gercek;
+    return {uygularken, normalde};
+  });
+  kontrol("Senkronun uyguladığı kayıt yeni bir senkron kurmuyor",
+    cevrim.uygularken === 0 && cevrim.normalde === 1, JSON.stringify(cevrim));
+
+  /* 9.2 Yeniden çizim koruması tur/sınav SONUÇ ekranını da kapsıyor.
+     Kapsamasaydı skor, kazanılan XP ve bölüm dağılımı okunmadan siliniyordu. */
+  const koruma = await page.evaluate(async ()=>{
+    const kaynak = await fetch("js/sync.js").then(r=>r.text());
+    const d = document.createElement("div");
+    d.className = "testresult"; document.body.appendChild(d);
+    const eslesti = !!document.querySelector(".exprogress, .testresult");
+    d.remove();
+    return {kaynakta: kaynak.includes(".exprogress, .testresult"), eslesti};
+  });
+  kontrol("Sonuç ekranı yeniden çizim korumasının içinde",
+    koruma.kaynakta && koruma.eslesti, JSON.stringify(koruma));
+
+  /* 9.3 Gramer maddeleri artık konu başına tek id taşımıyor. */
+  const gramIdler = await page.evaluate(()=>{
+    const s = new Set();
+    for(let i=0;i<80;i++) s.add(exerciseForGrammarB1("klitik").id);
+    return [...s];
+  });
+  kontrol("B1 klitik maddeleri ayrı id taşıyor",
+    gramIdler.length > 5 && gramIdler.every(id=> /^gr_b1_klitik_\d+$/.test(id)),
+    `${gramIdler.length} farklı id`);
+
+  const havuz = await page.evaluate(()=> ({
+    gram: GRAM_IDS_B1.length,
+    toplam: levelItemIds(LEVELS.B1).length
+  }));
+  kontrol("94 gramer maddesi ustalık havuzunda (844 → 938)",
+    havuz.gram === 94 && havuz.toplam === 938, JSON.stringify(havuz));
+
+  /* 9.4 Klitik ipucu maddeye bağlı: 22 cümlenin 5'inde kısa çizgi yok. */
+  const ipuclari = await page.evaluate(()=>{
+    const out = [];
+    for(let i=0;i<200;i++){
+      const q = exerciseForGrammarB1("klitik");
+      out.push({tireli: /-______|______-/.test(q.prompt), zatenVar: /zaten var/.test(q.cue||""), strict: !!q.strictHyphen});
+    }
+    return out;
+  });
+  kontrol("Kısa çizgi ipucu yalnızca gerçekten tireli cümlelerde",
+    ipuclari.every(x=> x.tireli === x.zatenVar && x.tireli === x.strict),
+    `tiresiz örnek sayısı: ${ipuclari.filter(x=>!x.tireli).length}`);
+
+  /* 9.5 Model cümlede noktalama öncesi boşluk kalmıyor ("în mijloc , fără"). */
+  const bosluk = await page.evaluate(()=>{
+    const kotu = [];
+    ["klitik","gendat","edat","turetme"].forEach(k=>{
+      for(let i=0;i<120;i++){
+        const q = exerciseForGrammarB1(k);
+        if(/\s[,.;:!?]/.test(q.roDisplay||"")) kotu.push(q.roDisplay);
+      }
+    });
+    return [...new Set(kotu)];
+  });
+  kontrol("Gramer model cümlelerinde noktalama öncesi boşluk yok",
+    bosluk.length === 0, bosluk.slice(0,2).join(" | "));
+
+  /* 9.6 Cinsiyet işareti kelimenin kendisine yapışık değil. */
+  const b1Cinsiyet = await page.evaluate(()=>{
+    const yapisik = VOCAB_B1.filter(v=> /\((f|n|m)\)\s*$/.test(v[2])).length;
+    const ornek = VOCAB_B1.find(v=> v[4] === "n");
+    const q = exerciseForVocabB1(ornek);
+    return {yapisik, hint:q.hint, aciklama:q.aciklama};
+  });
+  kontrol("Cinsiyet işareti Romence kelimeye yapışık değil", b1Cinsiyet.yapisik === 0,
+    `yapışık kalan: ${b1Cinsiyet.yapisik}`);
+  kontrol("Cinsiyet bilgisi soruda değil, cevaptan sonra",
+    !/·\s*(f|n|m)\b/.test(b1Cinsiyet.hint) && /dişil|nötr|eril/.test(b1Cinsiyet.aciklama||""),
+    `${b1Cinsiyet.hint} → ${b1Cinsiyet.aciklama}`);
+
+  /* 9.7 B1 cümle taşlarında baş harf / iç noktalama sızıntısı yok. */
+  const tasSizinti = await page.evaluate(()=>{
+    const kotu = [];
+    SENTENCES_B1.forEach(s=>{
+      const q = exerciseForSentenceB1({ro:s[0], tr:s[1], id:s[2]});
+      const ozel = ozelAdSeti();
+      q.words.forEach(w=>{
+        if(/[,;:!?.]/.test(w)) kotu.push("noktalama: "+w);
+        if(/^[A-ZĂÂÎȘȚ]/.test(w) && !ozel.has(w)) kotu.push("büyük harf: "+w);
+      });
+    });
+    return [...new Set(kotu)];
+  });
+  kontrol("B1 dizme taşlarında büyük harf/noktalama sızıntısı yok",
+    tasSizinti.length === 0, tasSizinti.slice(0,3).join(" | "));
+
+  /* 9.8 Condițional-optativ gerçekten soruluyor (32/32 imperfect çıkıyordu). */
+  const kipler = await page.evaluate(()=>{
+    const say = {imp:0, cond:0};
+    for(let i=0;i<300;i++){
+      const q = exerciseForVerbB1(VERBS_B1[i % VERBS_B1.length]);
+      if(/condițional/i.test(q.prompt)) say.cond++; else say.imp++;
+    }
+    return say;
+  });
+  kontrol("Condițional-optativ ilk turdan itibaren soruluyor",
+    kipler.cond > 30 && kipler.imp > 30, JSON.stringify(kipler));
+
+  const fiilIpucu = await page.evaluate(()=>{
+    const q = exerciseForVerbB1(VERBS_B1.find(v=> /^IV/.test(v[4])));
+    return {hint:q.hint, aciklama:q.aciklama, prompt:q.prompt};
+  });
+  kontrol("Çekim sınıfı soruda değil, cevaptan sonra",
+    !/\(-/.test(fiilIpucu.hint) && /grubu/.test(fiilIpucu.aciklama||""),
+    `${fiilIpucu.hint} → ${fiilIpucu.aciklama}`);
+
+  /* 9.9 Kök paylaşan zıt anlam maddesi çoktan seçmeli değil (bedava cevap). */
+  const zit = await page.evaluate(()=>{
+    const kokPaylasan = ANTONIM_B1.filter(a=> _b1KokPaylasiyor(a[0], a[1]) && !a[1].trim().includes(" "));
+    const farkli = ANTONIM_B1.filter(a=> !_b1KokPaylasiyor(a[0], a[1]));
+    return {
+      kokSayisi: kokPaylasan.length,
+      kokKind: kokPaylasan.slice(0,5).map(a=> exerciseForAntonimB1(a).kind),
+      farkliKind: farkli.slice(0,5).map(a=> exerciseForAntonimB1(a).kind)
+    };
+  });
+  kontrol("Kök paylaşan zıt anlam maddeleri yazdırılıyor",
+    zit.kokSayisi > 5 && zit.kokKind.every(k=> k === "type"),
+    `${zit.kokSayisi} madde · ${zit.kokKind.join(",")}`);
+  kontrol("Anlamca farklı karşıtlar çoktan seçmeli kalıyor",
+    zit.farkliKind.some(k=> k === "mc"), zit.farkliKind.join(","));
+
+  /* 9.10 Boş tur / boş sınav ödül vermiyor. */
+  const bosTur = await page.evaluate(()=>{
+    const oncekiXp = sessionXp, oncekiScore = sessionScore;
+    sessionScore = {correct:0,total:0,firstTry:0};
+    sessionXp = 0; grantSessionEndXP(false); const tur = sessionXp;
+    sessionXp = 0; grantSessionEndXP(true);  const sinav = sessionXp;
+    sessionScore = oncekiScore; sessionXp = oncekiXp;
+    return {tur, sinav};
+  });
+  kontrol("Hiç soru cevaplanmayan tur/sınav XP vermiyor",
+    bosTur.tur === 0 && bosTur.sinav === 0, JSON.stringify(bosTur));
+
+  /* 9.11 Combo ilk denemedeki yanlışta kırılıyor. */
+  await page.locator("#startBtn").click();
+  await page.waitForSelector(".qtext");
+  const combo = await page.evaluate(()=>{
+    sessionCombo = 4;
+    currentEx = {id:"test_combo", kind:"mc", answer:"x", _attempts:1};
+    markResult(true);                      // ikinci denemede doğru
+    const ikinciDeneme = sessionCombo;
+    sessionCombo = 4;
+    currentEx = {id:"test_combo2", kind:"mc", answer:"x", _attempts:0};
+    markResult(true);                      // ilk denemede doğru
+    return {ikinciDeneme, ilkDeneme: sessionCombo};
+  });
+  kontrol("İlk denemedeki yanlış combo'yu kırıyor",
+    combo.ikinciDeneme === 0 && combo.ilkDeneme === 5, JSON.stringify(combo));
+
+  /* 9.13 Çok karşılıklı Türkçe gloss'ta kısmi cevap kabul ediliyor (B1). */
+  const b1Gloss = await page.evaluate(()=>{
+    const v = VOCAB_B1.find(x=> x[3].includes("/"));
+    if(!v) return null;
+    const q = exerciseForVocabB1(v);  // kutu 0'da mc gelir; alts'ı doğrudan sınıyoruz
+    return {gloss:v[3], alts:(typeof anlamSecenekleri==="function" ? anlamSecenekleri(v[3]) : [])};
+  });
+  kontrol("Çok karşılıklı gloss'ta parçalar da kabul ediliyor (B1)",
+    !!b1Gloss && b1Gloss.alts.length > 1,
+    b1Gloss ? `${b1Gloss.gloss} → ${b1Gloss.alts.join(" | ")}` : "örnek yok");
+
+  /* 9.14 "ocak" hangi ocak? — ay ile aragaz artık ayırt edilebiliyor. */
+  const ocak = await page.evaluate(()=>{
+    const ay = VOCAB.find(v=> v[2]==="ianuarie");
+    const aragaz = VOCAB.find(v=> v[2]==="aragaz");
+    return {ay: ay && ay[3], aragaz: aragaz && aragaz[3],
+            ayKabul: anlamSecenekleri(ay[3]).includes("ocak")};
+  });
+  kontrol("'ocak' karşılıkları ayırt edilebiliyor, kısa yazım hâlâ kabul",
+    ocak.ay === "ocak (ay)" && /aragaz/.test(ocak.aragaz||"") && ocak.ayKabul,
+    JSON.stringify(ocak));
+
+  /* 9.11'deki markResult çağrısı ekranı geri bildirim durumunda bıraktı;
+     temiz bir ana ekrandan devam ediyoruz. */
+  await page.evaluate(()=>{ sessionQueue = []; sessionIdx = 0; currentEx = null; switchTab("practice"); });
+  await page.waitForSelector("#startBtn", {timeout: 5000});
+
+  /* 9.12 Tur sürerken sekmeye basınca uyarı çıkıyor, tur sessizce silinmiyor. */
+  await page.locator("#startBtn").click();
+  await page.waitForSelector(".qtext");
+  await page.locator('.tab[data-tab="dash"]').click();
+  const uyariVar = await page.locator("#turCikisUyari").count();
+  const halaSoruda = await page.locator(".qtext").count();
+  kontrol("Tur sürerken sekmeye basınca önce uyarı çıkıyor",
+    uyariVar === 1 && halaSoruda === 1, `uyarı:${uyariVar} soru:${halaSoruda}`);
+  await page.locator("#turCikisOnay").click();
+  await page.waitForSelector(".statgrid", {timeout: 5000});
+  kontrol("Onaylayınca turdan çıkılıyor", await page.locator(".statgrid").count() === 1);
+  await page.evaluate(()=> selectLevel("A2"));
+  await page.locator('.tab[data-tab="practice"]').click();
 
   /* ---------- 8. Konsol ---------- */
   console.log("\n8) Konsol");
