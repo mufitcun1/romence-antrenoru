@@ -40,7 +40,10 @@
     </div>
   </div>
 
-  <div class="palettepicker">
+  <!-- Tema/ses satırı mobilde ana eylemi (Pratiğe Başla) katlamanın altına
+       itiyordu; dar ekranda tek bir düğmeye katlanıyor. -->
+  <button type="button" class="palettetoggle" id="paletteToggle" aria-expanded="false" aria-controls="paletteRow" title="Tema ve ses">&#127912;</button>
+  <div class="palettepicker" id="paletteRow">
     <span class="lbl">Tema:</span>
     <button type="button" class="paletteswatch" data-palette="blue" style="background:#2563eb" title="Mavi" aria-label="Mavi tema"></button>
     <button type="button" class="paletteswatch" data-palette="green" style="background:#0e7490" title="Yeşil" aria-label="Yeşil tema"></button>
@@ -54,10 +57,12 @@
     <button class="levelchip" data-level="B1">B1</button>
   </div>
 
-  <div class="tabs" id="tabsRow" style="display:none">
-    <div class="tab" data-tab="practice">Pratik</div>
-    <div class="tab" data-tab="test">Deneme Sınavı</div>
-    <div class="tab" data-tab="dash">İlerleme</div>
+  <!-- Sekmeler <div> idi: klavyeyle odaklanılamıyor, ekran okuyucu sekme
+       olduklarını bilmiyordu (Play Console ön yayın raporu bunu işaretler). -->
+  <div class="tabs" id="tabsRow" role="tablist" style="display:none">
+    <div class="tab" role="tab" tabindex="0" aria-selected="false" data-tab="practice">Pratik</div>
+    <div class="tab" role="tab" tabindex="0" aria-selected="false" data-tab="test">Deneme Sınavı</div>
+    <div class="tab" role="tab" tabindex="0" aria-selected="false" data-tab="dash">İlerleme</div>
   </div>
 
   <div id="app-root"></div>

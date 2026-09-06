@@ -65,6 +65,11 @@ let syncBusy    = false;
 function syncSetStatus(status){
   syncStatus = status;
   if(typeof updateSyncBadge === "function") updateSyncBadge();
+  /* İlerleme sekmesindeki hesap kartı yalnızca sekme yeniden çizilince
+     tazeleniyordu: üst bar "yedeklendi" derken aynı ekrandaki kart hâlâ
+     "eşitleniyor…" gösterebiliyordu. Kart açıksa onu da güncelliyoruz. */
+  const kart = document.getElementById('syncCardStatus');
+  if(kart && typeof syncStatusLabel === "function") kart.innerHTML = syncStatusLabel();
 }
 
 /* ============================= ALT KATMAN ============================= */

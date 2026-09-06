@@ -81,7 +81,11 @@ async function registerAccount(usernameRaw, displayNameRaw, password, seedData){
   const key = (usernameRaw||"").trim().toLowerCase();
   if(!key) return {ok:false, msg:"Kullanıcı adı boş olamaz."};
   if(key==="admin") return {ok:false, msg:'Bu kullanıcı adı ayrılmış — "Admin girişi" bağlantısını kullan.'};
-  if(!/^[a-z0-9_.]{2,20}$/i.test(key)) return {ok:false, msg:"Kullanıcı adı yalnızca harf/rakam/._ içerebilir (2-20 karakter)."};
+  /* Kural Türkçe harf kabul etmiyor (kullanıcı adı bulutta
+     "ad@rotrainer.app" e-postasına dönüşüyor, ASCII olmak zorunda). Mesajda
+     "harf" demek Türkçe arayüzde yanıltıcıydı: "müfitçun" yazan kullanıcı
+     ü ve ç'ye "harf değil" denmiş gibi oluyordu. */
+  if(!/^[a-z0-9_.]{2,20}$/i.test(key)) return {ok:false, msg:"Kullanıcı adı yalnızca İngilizce harf (a-z), rakam, nokta ve alt çizgi içerebilir — Türkçe harf (ç, ğ, ı, ö, ş, ü) ve boşluk kullanılamaz. 2-20 karakter."};
   if(ACCOUNTS.accounts[key]) return {ok:false, msg:"Bu kullanıcı adı zaten alınmış."};
   /* M1 — ALT SINIR TEK KAYNAKTAN. Burada 3, Supabase'de 6 yazıyordu; arada
      kalan kullanıcı yerel hesap açabiliyor ama bulut hesabı HİÇ oluşmuyordu.
@@ -225,7 +229,7 @@ async function renameAccount(oldKey, newUsernameRaw){
   if(!newKey) return {ok:false, msg:"Kullanıcı adı boş olamaz."};
   if(newKey === oldKey) return {ok:false, msg:"Yeni ad eskisiyle aynı."};
   if(newKey === "admin") return {ok:false, msg:"Bu kullanıcı adı ayrılmış."};
-  if(!/^[a-z0-9_.]{2,20}$/i.test(newKey)) return {ok:false, msg:"Kullanıcı adı yalnızca harf/rakam/._ içerebilir (2-20 karakter)."};
+  if(!/^[a-z0-9_.]{2,20}$/i.test(newKey)) return {ok:false, msg:"Kullanıcı adı yalnızca İngilizce harf (a-z), rakam, nokta ve alt çizgi içerebilir — Türkçe harf (ç, ğ, ı, ö, ş, ü) ve boşluk kullanılamaz. 2-20 karakter."};
   if(ACCOUNTS.accounts[newKey]) return {ok:false, msg:"Bu kullanıcı adı bu cihazda zaten kullanılıyor."};
 
   ACCOUNTS.accounts[newKey] = acc;
@@ -334,11 +338,12 @@ function renderAuth(){
   root().innerHTML = `<div class="card">
     <div class="mascotwrap">${mascotSVG("happy",84)}</div>
     <div class="pill">${isLogin? "Giriş Yap":"Hesap Oluştur"}</div>
-    <div class="qtext">${isLogin? "Ailene özel ilerlemeni görmek için giriş yap.":"Yeni bir hesap oluştur — ilerlemen bu hesaba kaydedilecek."}</div>
+    <div class="qtext">${isLogin? "Kaldığın yerden devam etmek için giriş yap.":"Yeni bir hesap oluştur — ilerlemen bu hesaba kaydedilecek."}</div>
     <div class="inputrow" style="flex-direction:column;align-items:stretch">
-      <input type="text" id="authUser" autocomplete="username" class="authinput" placeholder="Kullanıcı adı"/>
+      <input type="text" id="authUser" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" class="authinput" placeholder="${isLogin? "Kullanıcı adı" : "Kullanıcı adı (a-z, 0-9, . _)"}"/>
       ${isLogin? "" : `<input type="text" id="authDisplay" class="authinput" placeholder="Görünecek isim (opsiyonel)"/>`}
       <input type="password" id="authPass" autocomplete="${isLogin?'current-password':'new-password'}" class="authinput" placeholder="${isLogin? "Şifre" : "Şifre (en az " + SYNC_MIN_PASSWORD + " karakter)"}"/>
+      ${isLogin? "" : `<input type="password" id="authPass2" autocomplete="new-password" class="authinput" placeholder="Şifreyi tekrar yaz"/>`}
     </div>
     ${isLogin? "" : `<div class="pwnote">&#128273; <b>Şifreni not al.</b> Hesabın gerçek bir e-postaya bağlı olmadığı için şifreni unutursan kurtarma yolu yok — hesabına bir daha giremezsin.</div>`}
     <div class="autherr" id="authErr"></div>
@@ -346,7 +351,7 @@ function renderAuth(){
     <div class="authswitch">${isLogin
       ? 'Hesabın yok mu? <a id="authSwitchLink">Hesap oluştur</a>'
       : 'Zaten hesabın var mı? <a id="authSwitchLink">Giriş yap</a>'}</div>
-    ${isLogin? `<div class="authswitch" style="margin-top:4px"><a id="adminLink">Admin girişi</a></div>` : ""}
+    ${isLogin? `<div class="pwnote" style="margin-top:12px">&#128273; Şifreni unuttuysan: hesap gerçek bir e-postaya bağlı olmadığı için kendi başına sıfırlanamıyor. <a href="mailto:mufitcun1@gmail.com?subject=RoTrainer%20-%20sifre%20yardimi">Destekle iletişime geç</a>.</div>` : ""}
     <div class="authswitch" style="margin-top:4px"><a id="backToWelcome">&#8592; Geri</a></div>
   </div>`;
   const userInp = document.getElementById('authUser');
@@ -379,6 +384,13 @@ function renderAuth(){
         }
       }
     } else {
+      /* Hesabın kurtarma yolu yok: tek harflik bir yazım hatası hesabı kalıcı
+         olarak kaybettiriyordu. Tek şifre alanı bu risk için yeterli değil. */
+      const pass2 = document.getElementById('authPass2');
+      if(pass2 && pass2.value !== password){
+        showErr("İki şifre birbirini tutmuyor.");
+        submitBtn.disabled = false; submitting = false; return;
+      }
       const dispInp = document.getElementById('authDisplay');
       res = await registerAccount(username, dispInp? dispInp.value : "", password, isGuest ? STATE : null);
     }
@@ -423,8 +435,12 @@ function renderAuth(){
     authMode = isLogin? "register":"login";
     renderAuth();
   });
+  /* "Admin girişi" bağlantısı giriş ekranından kaldırıldı: her kullanıcıya
+     görünüyordu, tüketici uygulamasında gereksiz ve davetkârdı. Yönetici
+     erişimi kaybolmasın diye gizli yol duruyor — adresin sonuna #admin. */
   const adminLink = document.getElementById('adminLink');
   if(adminLink) adminLink.addEventListener('click', renderAdminAuth);
+  if(location.hash === "#admin"){ location.hash = ""; renderAdminAuth(); }
   const backLink = document.getElementById('backToWelcome');
   if(backLink) backLink.addEventListener('click', ()=>{
     /* Misafirken kayıt ekranına gelinmişse geri dönmek oyuna geri döndürür,

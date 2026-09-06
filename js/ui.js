@@ -162,6 +162,21 @@ function updateGameBar(){
   bar.classList.toggle('goaldone', today >= goal);
 }
 
+/* Bulut durumunun insan okunur karşılığı. Tek kaynak: hem İlerleme'deki hesap
+   kartı hem de syncSetStatus'ün canlı güncellemesi bunu kullanıyor — eskiden
+   metin yalnızca kart çizilirken üretildiği için üst bar ile kart aynı anda
+   iki farklı durum gösterebiliyordu. */
+function syncStatusLabel(){
+  return syncStatus === "ok" ? "&#10003; yedeklendi"
+    : syncStatus === "syncing" ? "eşitleniyor…"
+    : syncStatus === "linking" ? "bağlanıyor…"
+    : syncStatus === "offline" ? "çevrimdışı"
+    : syncStatus === "unavailable" ? "sunucuya ulaşılamıyor"
+    : syncStatus === "short_password" ? "kapalı — şifre kısa"
+    : syncStatus === "unlinked" ? "kapalı — bağlı değil"
+    : "kapalı";
+}
+
 /* Bulut yedeği durumu — üst barda kullanıcı adının yanında küçük bir işaret.
    Sessiz kalması bilinçli: senkron çalışmadığında bile uygulama tam çalışır,
    bu yüzden hata durumu uyarı değil bilgi olarak gösteriliyor. */
@@ -467,8 +482,16 @@ function buildSessionQueue(n, opts){
     q.push({type:"cum", data:{ro:s.ro, tr:s.tr}});
   }
 
+  /* Konular yerine koymalı seçiliyordu: 10 soruluk turda aynı gramer konusu
+     iki kez çıkabiliyor, madde seçimi de rastgele olduğu için birebir aynı
+     soru tekrarlanabiliyordu. Artık konular karıştırılıp sırayla tüketiliyor;
+     konu sayısından fazla gramer sorusu istenirse liste yeniden karıştırılıyor. */
   const konular = L.topics();
-  for(let i=0;i<nGram;i++) q.push({type:"gram", data:pick(konular)});
+  let sira = [];
+  for(let i=0;i<nGram;i++){
+    if(sira.length===0) sira = shuffle(konular);
+    q.push({type:"gram", data: sira.pop()});
+  }
   return shuffle(q);
 }
 
@@ -519,7 +542,7 @@ function renderExercise(){
     currentEx.options.forEach((o,i)=>{ body += `<button class="opt" data-val="${encodeURIComponent(o)}">${o}</button>`; });
     body += `</div>`;
   } else if(currentEx.kind==="order"){
-    body += `<div class="orderbuilt" id="orderBuilt"><span class="orderhint">Kelimeleri sürükle veya tıkla, cümleyi buraya oluştur…</span></div>`;
+    body += `<div class="orderbuilt" id="orderBuilt"><span class="orderhint">${ORDER_HINT}</span></div>`;
     body += `<div class="orderbank" id="orderBank"></div>`;
     body += `<div class="row" style="margin-top:10px;gap:8px"><button class="btn secondary" id="clearOrderBtn" type="button">Temizle</button><button class="btn" id="checkOrderBtn" type="button">Kontrol Et</button></div>`;
   } else {
@@ -532,6 +555,10 @@ function renderExercise(){
   }
   body += `<div class="feedback" id="feedback"></div>`;
   body += `<div class="row" style="margin-top:14px"><button class="btn secondary" id="skipBtn">Atla</button><button class="btn" id="nextBtn" style="display:none">Devam →</button></div>`;
+  /* Turu bırakmanın tek yolu üstteki sekmeye basmaktı; bu, turu sessizce iptal
+     edip tur bitirme bonusunu ve sonuç ekranını götürüyordu. Görünür bir çıkış
+     ekliyoruz: tur burada düzgünce sonlanır, kazanılan XP ve sonuç korunur. */
+  body += `<div style="margin-top:10px;text-align:center"><a id="endRoundLink" style="color:var(--ink-dim);font-size:.82rem;cursor:pointer;text-decoration:underline">${testMode?"Sınavı burada bitir":"Turu burada bitir"}</a></div>`;
   body += `</div>`;
   root().innerHTML = body;
 
@@ -576,6 +603,7 @@ function renderExercise(){
         btn.addEventListener('click', ()=>{
           const i = +btn.getAttribute('data-i');
           used.add(i); built.push(i);
+          tazeGeriBildirim();
           renderBank(); renderBuilt();
         });
         btn.addEventListener('dragstart', (e)=>{
@@ -589,7 +617,7 @@ function renderExercise(){
     function renderBuilt(){
       const builtEl = document.getElementById('orderBuilt');
       if(built.length===0){
-        builtEl.innerHTML = `<span class="orderhint">Kelimeleri sürükle veya tıkla, cümleyi buraya oluştur…</span>`;
+        builtEl.innerHTML = `<span class="orderhint">${ORDER_HINT}</span>`;
         return;
       }
       builtEl.innerHTML = built.map((i,pos)=>
@@ -599,6 +627,7 @@ function renderExercise(){
           const pos = +btn.getAttribute('data-pos');
           const i = built[pos];
           built.splice(pos,1); used.delete(i);
+          tazeGeriBildirim();
           renderBank(); renderBuilt();
         });
         btn.addEventListener('dragstart', (e)=>{
@@ -679,6 +708,8 @@ function renderExercise(){
     }
   }
   document.getElementById('skipBtn').addEventListener('click', ()=> { markResult(false, "(atlandı)", true); });
+  const endLink = document.getElementById('endRoundLink');
+  if(endLink) endLink.addEventListener('click', ()=> renderSessionDone());
 }
 
 function insertChar(inp, ch){
@@ -688,6 +719,21 @@ function insertChar(inp, ch){
   const pos = start + ch.length;
   inp.focus();
   if(inp.setSelectionRange) inp.setSelectionRange(pos,pos);
+}
+
+/* HTML5 sürükle-bırak dokunmatik cihazlarda çalışmaz (mobil tarayıcılar
+   dragstart üretmez), oysa taşlarda draggable="true" duruyor ve metin
+   "sürükle" diyordu — telefonda vaadin yarısı boşa çıkıyordu. Metni işaretçi
+   türüne göre seçiyoruz; masaüstünde sürükle-bırak aynen çalışmaya devam eder. */
+const ORDER_HINT = (typeof matchMedia === "function" && matchMedia("(pointer: coarse)").matches)
+  ? "Kelimelere dokun, cümleyi buraya oluştur…"
+  : "Kelimeleri sürükle veya tıkla, cümleyi buraya oluştur…";
+
+/* Kullanıcı cevabını değiştirdiğinde eski "Yanlış!" kutusu ekranda kalıyordu. */
+function tazeGeriBildirim(){
+  if(currentEx && currentEx._done) return;
+  const fb = document.getElementById('feedback');
+  if(fb){ fb.classList.remove('show','bad','good'); fb.innerHTML = ''; }
 }
 
 const MAX_ATTEMPTS = 2; // her soruda iki cevap hakkı — ilk yanlışta "tekrar dene" diyoruz
@@ -700,14 +746,18 @@ function answer(val, btnEl){
   const esitle = currentEx.strictHyphen
     ? (x => normTire(String(x||"").replace(/^-+|-+$/g,"")))
     : norm;
-  const correct = esitle(val)===esitle(currentEx.answer);
+  /* Bazı sorularda birden fazla yazım doğrudur ("amca/dayı" gloss'unda hem
+     "amca" hem "dayı"). answerAlts bunları taşır; boşsa davranış eskisi gibi. */
+  const kabul = [currentEx.answer].concat(currentEx.answerAlts||[]);
+  const dogruMu = x => kabul.some(a=> esitle(x)===esitle(a));
+  const correct = dogruMu(val);
   const final = markResult(correct);
   if(currentEx.kind==="mc"){
     if(final){
       document.querySelectorAll('#opts .opt').forEach(b=>{
         b.disabled = true;
         const v = decodeURIComponent(b.getAttribute('data-val'));
-        if(esitle(v)===esitle(currentEx.answer)) b.classList.add('correct');
+        if(dogruMu(v)) b.classList.add('correct');
         else if(b===btnEl) b.classList.add('wrong');
       });
     } else if(btnEl){
@@ -733,7 +783,10 @@ function markResult(correct, note, noRetry){
      yapılıyor. Çağıran taraf, dönen değere göre (final mi değil mi) alanları
      kilitleyip kilitlemeyeceğine karar veriyor. */
   currentEx._attempts = (currentEx._attempts||0) + 1;
-  const isFinal = correct || noRetry || currentEx._attempts >= MAX_ATTEMPTS;
+  /* Deneme sınavında tek hak var. Pratikte "tekrar dene" öğretici; sınavda ise
+     ikinci hakkı doğru bilen kullanıcıya puan yazmak skoru ölçüm olmaktan
+     çıkarıyordu (herkes eninde sonunda %100 alabiliyordu). */
+  const isFinal = correct || noRetry || testMode || currentEx._attempts >= MAX_ATTEMPTS;
   const fb = document.getElementById('feedback');
   if(!isFinal){
     if(fb){
@@ -859,7 +912,15 @@ function scoreRingSVG(pct){
 /* Turu bitirme ödülleri. Ekran çizilmeden ÖNCE çağrılır ki ödül kutusu
    güncel XP/seri değerlerini göstersin. */
 function grantSessionEndXP(wasTest){
+  /* Sınav bonusu eskiden sabitti: 24 soruyu atlayıp %4 alan kullanıcı da tam
+     15 XP kazanıyordu, yani sınavı hızlıca geçmek XP toplamanın kestirme yolu
+     oluyordu. Artık bonus başarıya oranlı (en az yarısı garanti ki sınava
+     girmek hiç caydırıcı olmasın). */
   let bonus = wasTest ? XP_TEST_END : XP_SESSION_END;
+  if(wasTest && sessionScore.total > 0){
+    const oran = sessionScore.correct / sessionScore.total;
+    bonus = Math.max(Math.round(XP_TEST_END*0.5), Math.round(XP_TEST_END*oran));
+  }
   if(!wasTest && sessionScore.total > 0 && sessionScore.correct === sessionScore.total) bonus += XP_PERFECT;
   if(sessionFirstOfDay) bonus += XP_FIRST_TODAY;
   sessionXp += bonus;
@@ -881,8 +942,13 @@ function rewardBoxHTML(){
     streakRow = `<div class="rewardstreak"><span class="rflame">&#128293;</span>
       <div><b>${st.current} günlük seri</b><small>Bugünkü hedefin zaten tamamdı.</small></div></div>`;
   } else {
+    /* Serisi 0 olan (çoğu zaman yeni) kullanıcıya "sürdürmek" demek yanlış —
+       ortada sürdürülecek bir seri yok, başlatılacak bir seri var. */
+    const seriMetni = st.current > 0
+      ? `Seriyi sürdürmek için ${goal-today} XP daha gerekiyor.`
+      : `Seriyi başlatmak için ${goal-today} XP daha gerekiyor.`;
     streakRow = `<div class="rewardstreak"><span class="rflame dim">&#128293;</span>
-      <div><b>${st.current} günlük seri</b><small>Seriyi sürdürmek için ${goal-today} XP daha gerekiyor.</small></div></div>`;
+      <div><b>${st.current} günlük seri</b><small>${seriMetni}</small></div></div>`;
   }
   return `<div class="rewardbox">
     <div class="xpgain">+${sessionXp} XP</div>
@@ -919,7 +985,10 @@ function renderSessionDone(){
     <div class="mascotwrap">${mascotSVG(pct>=70?"happy":pct>=40?"neutral":"sad",84)}</div>
     <div class="pill">Tur Tamamlandı</div>
     <div class="scoreringwrap">${scoreRingSVG(pct)}</div>
-    <p class="fraction">${sessionScore.correct}/${sessionScore.total} doğru</p>
+    <p class="fraction">${sessionScore.correct}/${sessionScore.total} doğru${
+      sessionQueue.filter(x=>x._retry).length
+        ? ` <span style="font-size:.6em;color:var(--ink-dim)">· ${sessionQueue.filter(x=>x._retry).length} tekrar sorusu</span>`
+        : ""}</p>
     ${rewardBoxHTML()}
     ${guestCta}
     <div class="row" style="margin-top:14px;gap:10px">
@@ -1135,15 +1204,7 @@ function renderDashboard(){
   ${(!isGuest && currentUser) ? `<div class="card" id="accountCard">
     <h2 style="margin-top:0">Hesap ve Bulut Yedeği</h2>
     <div class="row"><span>Kullanıcı adı</span><span>${currentUser}</span></div>
-    <div class="row" style="margin-top:8px"><span>Bulut yedeği</span><span>${
-      syncStatus === "ok" ? "&#10003; yedeklendi"
-      : syncStatus === "syncing" ? "eşitleniyor…"
-      : syncStatus === "linking" ? "bağlanıyor…"
-      : syncStatus === "offline" ? "çevrimdışı"
-      : syncStatus === "unavailable" ? "sunucuya ulaşılamıyor"
-      : syncStatus === "short_password" ? "kapalı — şifre kısa"
-      : syncStatus === "unlinked" ? "kapalı — bağlı değil"
-      : "kapalı"}</span></div>
+    <div class="row" style="margin-top:8px"><span>Bulut yedeği</span><span id="syncCardStatus">${syncStatusLabel()}</span></div>
     <p style="color:var(--ink-dim);font-size:.8rem;margin:12px 0 10px;line-height:1.5">Şifren bu cihazda saklanmıyor; yalnızca doğrulama izi tutuluyor. Unutursan kurtarma yolu yok — bu yüzden not almanı öneririz.</p>
     <button class="btn secondary" id="pwChangeBtn" style="width:100%">Şifremi Değiştir</button>
     ${(syncStatus === "unlinked" || syncStatus === "error")
@@ -1244,7 +1305,11 @@ function switchTab(tab){
      selectLevel bu dalda switchTab'ı çağırmaz, döngü olmaz. */
   if(!seviyeHazir(currentLevel)){ selectLevel(currentLevel); return; }
   updateGameBar();
-  document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.getAttribute('data-tab')===tab));
+  document.querySelectorAll('.tab').forEach(t=>{
+    const aktif = t.getAttribute('data-tab')===tab;
+    t.classList.toggle('active', aktif);
+    t.setAttribute('aria-selected', aktif ? 'true' : 'false');
+  });
   if(tab==="practice") renderPracticeHome();
   else if(tab==="test") renderTestHome();
   else renderDashboard();
@@ -1278,8 +1343,8 @@ function selectLevel(lvl){
     root().innerHTML = `<div class="card" style="text-align:center;padding:40px 18px">
       <div class="pill">Yakında</div>
       <div class="qtext" style="margin-top:10px">${lvl} seviyesi hazırlanıyor</div>
-      <p style="color:var(--ink-dim);margin-top:10px;line-height:1.5">A1, A2 ve B1 seviyeleri kullanıma açık; bu seviyenin verisi yüklenemedi.
-      A1'i bitirdikçe ${lvl} kelime, fiil çekimi, gramer, dinleme, cümle kurma ve deneme sınavı içerikleri de buraya eklenecek —
+      <p style="color:var(--ink-dim);margin-top:10px;line-height:1.5">Şu an kullanıma açık seviyeler: ${Object.keys(LEVELS).filter(k=>LEVELS[k].ready).join(", ")||"—"}.
+      ${lvl} kelime, fiil çekimi, gramer, cümle kurma ve deneme sınavı içerikleri hazır olduğunda buraya eklenecek —
       aynı tekrar ve ilerleme sistemiyle çalışacak.</p>
       <button class="btn secondary" style="margin-top:18px" onclick="selectLevel('A1')">A1'e Dön</button>
     </div>`;
@@ -1311,7 +1376,25 @@ function initPalette(){
 initPalette();
 initSfx();
 document.querySelectorAll('.paletteswatch').forEach(b=> b.addEventListener('click', ()=> applyPalette(b.getAttribute('data-palette'))));
-document.querySelectorAll('.tab').forEach(t=> t.addEventListener('click', ()=> switchTab(t.getAttribute('data-tab'))));
+/* Dar ekranda tema/ses satırı katlı geliyor; düğme onu açıp kapatıyor. */
+(function(){
+  const t = document.getElementById('paletteToggle'), row = document.getElementById('paletteRow');
+  if(!t || !row) return;
+  t.addEventListener('click', ()=>{
+    const acik = row.classList.toggle('acik');
+    t.setAttribute('aria-expanded', acik ? 'true' : 'false');
+  });
+})();
+document.querySelectorAll('.tab').forEach(t=>{
+  t.addEventListener('click', ()=> switchTab(t.getAttribute('data-tab')));
+  /* Sekmeler <div> olduğu için klavye erişimi yoktu; tabindex index.html'de
+     verildi, tuş davranışını burada tamamlıyoruz (Enter ve Boşluk). */
+  t.addEventListener('keydown', e=>{
+    if(e.key==="Enter" || e.key===" " || e.key==="Spacebar"){
+      e.preventDefault(); switchTab(t.getAttribute('data-tab'));
+    }
+  });
+});
 document.querySelectorAll('.levelchip').forEach(c=> c.addEventListener('click', ()=> selectLevel(c.getAttribute('data-level'))));
 /* Aynı düğme: gerçek hesapta "Çıkış Yap", misafirde "İlerlemeni Kaydet"
    (etiketi showAppChrome ayarlıyor). */

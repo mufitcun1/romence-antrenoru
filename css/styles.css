@@ -73,6 +73,18 @@ body{background:var(--bg);color:var(--ink);font-family:-apple-system,BlinkMacSys
 h1{font-size:1.15rem;margin:0 0 2px;font-weight:700}
 .sub{color:var(--ink-dim);font-size:.82rem;margin:0 0 16px}
 .palettepicker{display:flex;align-items:center;gap:8px;margin:0 0 14px}
+.palettetoggle{display:none;background:var(--card);border:1px solid var(--line);border-radius:999px;
+  width:34px;height:34px;font-size:1rem;line-height:1;cursor:pointer;margin:0 0 12px;padding:0}
+/* Dar ekranda üst yığın (başlık + kullanıcı barı + XP barı + tema + seviye +
+   sekme) ana eylemi katlamanın altına itiyordu; tema satırını katlıyor ve
+   başlığı sıkıştırıyoruz. */
+@media (max-width:560px){
+  .palettetoggle{display:inline-flex;align-items:center;justify-content:center}
+  .palettepicker{display:none}
+  .palettepicker.acik{display:flex}
+  .sub{display:none}
+  h1{font-size:1.05rem;margin-bottom:8px}
+}
 .palettepicker .lbl{color:var(--ink-dim);font-size:.78rem;margin-right:2px}
 .paletteswatch{width:26px;height:26px;border-radius:50%;border:2px solid transparent;padding:0;cursor:pointer;box-shadow:0 0 0 1px var(--border);transition:transform .12s ease}
 .paletteswatch.active{border-color:var(--ink)}
