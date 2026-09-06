@@ -15,7 +15,7 @@ const VOCAB = [
 ["aile","aile","mamă","anne"],["aile","aile","tată","baba"],["aile","aile","bunic","büyükbaba"],["aile","aile","bunică","büyükanne"],
 ["aile","aile","fiu","oğul"],["aile","aile","fiică","kız evlat"],["aile","aile","frate","erkek kardeş"],["aile","aile","soră","kız kardeş"],
 ["aile","aile","unchi","amca/dayı"],["aile","aile","mătușă","teyze/hala"],["aile","aile","verișor","kuzen"],["aile","aile","nepot","yeğen/torun"],
-["kimlik","kişisel bilgi","apartament","daire"],["kimlik","kişisel bilgi","stradă","sokak"],["kimlik","kişisel bilgi","oraș","şehir"],
+["kimlik","kişisel bilgi","stradă","sokak"],["kimlik","kişisel bilgi","oraș","şehir"],
 ["kimlik","kişisel bilgi","sat","köy"],["kimlik","kişisel bilgi","țară","ülke"],["kimlik","kişisel bilgi","pașaport","pasaport"],
 ["kimlik","kişisel bilgi","carte de identitate","kimlik kartı"],
 ["ozellik","kişisel özellikler","înalt","uzun boylu"],["ozellik","kişisel özellikler","slab","zayıf"],["ozellik","kişisel özellikler","frumos","güzel"],
