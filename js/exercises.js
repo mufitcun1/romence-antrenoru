@@ -121,16 +121,22 @@ function exerciseForGrammar(topic){
     const [isim,cins,eril,disil] = it;
     const ans   = cins==="dişil" ? disil : eril;
     const wrong = cins==="dişil" ? eril  : disil;
-    return {id, kind:"mc", prompt:`"${isim}" (${cins}) — doğru sıfat formu hangisi?`,
+    /* Cinsiyet artık SORUDA yazmıyor. Romencede asıl zor iş ismin cinsiyetini
+       bilmek; "(dişil)" yazmak sorunun ölçtüğü şeyi hediye ediyordu, geriye
+       mekanik ek getirmek kalıyordu. Bilgi cevaptan SONRA veriliyor — aynı
+       ilke B1 gramer ipuçlarında da uygulanmıştı. */
+    return {id, kind:"mc", prompt:`"${isim}" — doğru sıfat formu hangisi?`,
       hint:"Sıfat-isim cinsiyet uyumu", options:shuffle([ans,wrong]), answer:ans,
       roDisplay:`${isim} ${ans}`,
-      aciklama: cins==="nötr" ? "Nötr isimler tekilde eril gibi çekilir (un parc frumos), çoğulda dişil gibi (două parcuri frumoase)." : null};
+      aciklama: `"${isim}" ${cins} bir isim.` + (cins==="nötr"
+        ? " Nötr isimler tekilde eril gibi çekilir (un parc frumos), çoğulda dişil gibi (două parcuri frumoase)."
+        : "")};
   }
   if(topic==="art"){
     const [it,id] = gramSec(ART_ITEMS,"art");
     const [isim,cins,dogru] = it;
-    return {id, kind:"type", prompt:`"${isim}" (${cins}) — belirtili halini yaz.`, hint:"Belirli artikel eki", answer:dogru, needsRoChars:true, roDisplay:dogru,
-      aciklama: cins==="nötr" ? "Nötr isimler tekilde eril gibi çekilir: -ul eki alır." : null};
+    return {id, kind:"type", prompt:`"${isim}" — belirtili halini yaz.`, hint:"Belirli artikel eki", answer:dogru, needsRoChars:true, roDisplay:dogru,
+      aciklama: `"${isim}" ${cins} bir isim.` + (cins==="nötr" ? " Nötr isimler tekilde eril gibi çekilir: -ul eki alır." : "")};
   }
   if(topic==="num"){
     const [it,id] = gramSec(NUM_ITEMS,"num");

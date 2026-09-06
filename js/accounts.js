@@ -339,15 +339,17 @@ function renderAuth(){
     <div class="mascotwrap">${mascotSVG("happy",84)}</div>
     <div class="pill">${isLogin? "Giriş Yap":"Hesap Oluştur"}</div>
     <div class="qtext">${isLogin? "Kaldığın yerden devam etmek için giriş yap.":"Yeni bir hesap oluştur — ilerlemen bu hesaba kaydedilecek."}</div>
+    <form id="authForm" style="display:contents" novalidate>
     <div class="inputrow" style="flex-direction:column;align-items:stretch">
-      <input type="text" id="authUser" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" class="authinput" placeholder="${isLogin? "Kullanıcı adı" : "Kullanıcı adı (a-z, 0-9, . _)"}"/>
-      ${isLogin? "" : `<input type="text" id="authDisplay" class="authinput" placeholder="Görünecek isim (opsiyonel)"/>`}
-      <input type="password" id="authPass" autocomplete="${isLogin?'current-password':'new-password'}" class="authinput" placeholder="${isLogin? "Şifre" : "Şifre (en az " + SYNC_MIN_PASSWORD + " karakter)"}"/>
-      ${isLogin? "" : `<input type="password" id="authPass2" autocomplete="new-password" class="authinput" placeholder="Şifreyi tekrar yaz"/>`}
+      <input type="text" id="authUser" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" class="authinput" placeholder="${isLogin? "Kullanıcı adı" : "Kullanıcı adı (a-z, 0-9, . _)"}"/>
+      ${isLogin? "" : `<input type="text" id="authDisplay" name="nickname" autocomplete="nickname" class="authinput" placeholder="Görünecek isim (opsiyonel)"/>`}
+      <input type="password" id="authPass" name="password" autocomplete="${isLogin?'current-password':'new-password'}" class="authinput" placeholder="${isLogin? "Şifre" : "Şifre (en az " + SYNC_MIN_PASSWORD + " karakter)"}"/>
+      ${isLogin? "" : `<input type="password" id="authPass2" name="password_confirm" autocomplete="new-password" class="authinput" placeholder="Şifreyi tekrar yaz"/>`}
     </div>
     ${isLogin? "" : `<div class="pwnote">&#128273; <b>Şifreni not al.</b> Hesabın gerçek bir e-postaya bağlı olmadığı için şifreni unutursan kurtarma yolu yok — hesabına bir daha giremezsin.</div>`}
     <div class="autherr" id="authErr"></div>
-    <button class="btn" id="authSubmitBtn" style="width:100%;margin-top:14px">${isLogin? "Giriş Yap":"Hesap Oluştur"}</button>
+    <button type="submit" class="btn" id="authSubmitBtn" style="width:100%;margin-top:14px">${isLogin? "Giriş Yap":"Hesap Oluştur"}</button>
+    </form>
     <div class="authswitch">${isLogin
       ? 'Hesabın yok mu? <a id="authSwitchLink">Hesap oluştur</a>'
       : 'Zaten hesabın var mı? <a id="authSwitchLink">Giriş yap</a>'}</div>
@@ -429,8 +431,13 @@ function renderAuth(){
       if(acc && !acc.pwPromptSkipped) renderPasswordStrengthen(res.key, password);
     }
   }
-  document.getElementById('authSubmitBtn').addEventListener('click', submit);
-  passInp.addEventListener('keydown', e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); } });
+  const authForm = document.getElementById('authForm');
+  if(authForm){
+    authForm.addEventListener('submit', e=>{ e.preventDefault(); submit(); });
+  } else {
+    document.getElementById('authSubmitBtn').addEventListener('click', submit);
+    passInp.addEventListener('keydown', e=>{ if(e.key==="Enter"){ e.preventDefault(); submit(); } });
+  }
   document.getElementById('authSwitchLink').addEventListener('click', ()=>{
     authMode = isLogin? "register":"login";
     renderAuth();

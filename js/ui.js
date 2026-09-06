@@ -551,6 +551,11 @@ function renderExercise(){
       body += `<div class="charrow" id="charRow">`;
       ROMANIAN_CHARS.forEach(c=>{ body += `<button type="button" class="charbtn" data-ch="${c}">${c}</button>`; });
       body += `</div>`;
+      /* Cevap eşleştirmesi diyakritiğe duyarsız (norm()), ama kullanıcı bunu
+         bilmiyordu: on tuşluk satır "bunları yazmak zorundasın" izlenimi
+         veriyor, telefonda da bir satır yer kaplıyordu. Kuralı yazıyoruz;
+         doğru yazılış cevaptan sonra zaten gösteriliyor. */
+      body += `<div class="charnote">Diyakritik zorunlu değil — <b>ă</b> yerine <b>a</b>, <b>ș</b> yerine <b>s</b> yazabilirsin.</div>`;
     }
   }
   body += `<div class="feedback" id="feedback"></div>`;
@@ -751,6 +756,10 @@ function answer(val, btnEl){
   const kabul = [currentEx.answer].concat(currentEx.answerAlts||[]);
   const dogruMu = x => kabul.some(a=> esitle(x)===esitle(a));
   const correct = dogruMu(val);
+  /* Kullanıcının yazdığı hâli saklıyoruz: doğru ama diyakritiksiz yazıldıysa
+     geri bildirimde bunu ayrıca söylüyoruz. B1 sınav hazırlığında yazım
+     önemli; "doğru" deyip geçmek öğrenciyi eksik bırakıyordu. */
+  currentEx._yazilan = val;
   const final = markResult(correct);
   if(currentEx.kind==="mc"){
     if(final){
@@ -851,6 +860,16 @@ function markResult(correct, note, noRetry){
     const spellingLine = currentEx.roDisplay
       ? `<div style="margin-top:4px;color:var(--ink-dim);font-size:.85rem">Yazılışı: <b style="color:var(--ink)">${currentEx.roDisplay}</b></div>`
       : "";
+    /* Doğru bildi ama diyakritikleri atladıysa (norm() bunu görmezden geliyor)
+       nazikçe hatırlatıyoruz — puanı etkilemiyor, yalnızca yazımı öğretiyor. */
+    const yazilan = currentEx._yazilan;
+    const diyakritikAtlandi = correct && typeof yazilan === "string" && yazilan.trim() &&
+      /[ăâîșțĂÂÎȘȚ]/.test(String(currentEx.answer||"")) &&
+      !/[ăâîșțĂÂÎȘȚ]/.test(yazilan) &&
+      norm(yazilan) === norm(currentEx.answer);
+    const diyakritikLine = diyakritikAtlandi
+      ? `<div style="margin-top:4px;color:var(--ink-dim);font-size:.85rem">✍️ Diyakritikler olmadan da kabul ediyoruz, ama doğru yazımı <b style="color:var(--ink)">${currentEx.answer}</b>.</div>`
+      : "";
     /* Combo rozeti yalnızca 3'ten sonra çıkar — her doğruda görünen bir rozet
        kısa sürede görünmez olur. */
     const comboChip = (correct && sessionCombo >= COMBO_SHOW)
@@ -860,7 +879,9 @@ function markResult(correct, note, noRetry){
     const kuralLine = currentEx.aciklama
       ? `<div style="margin-top:4px;color:var(--ink-dim);font-size:.85rem">${currentEx.aciklama}</div>` : "";
     fb.innerHTML = correct
-      ? `<div class="ficon">✓</div><div class="ftext"><b>Doğru!</b>${comboChip}${spellingLine}${kuralLine}</div>`
+      /* Diyakritik uyarısı zaten doğru yazımı gösteriyor; ikisini birden
+         basmak aynı şeyi iki kez söylemek olurdu. */
+      ? `<div class="ficon">✓</div><div class="ftext"><b>Doğru!</b>${comboChip}${diyakritikAtlandi ? "" : spellingLine}${diyakritikLine}${kuralLine}</div>`
       : `<div class="ficon">✕</div><div class="ftext"><b>Doğru cevap:</b> ${currentEx.answer}${(currentEx.roDisplay && currentEx.roDisplay!==currentEx.answer) ? spellingLine : ""}${kuralLine}</div>`;
     if(correct){
       if(sessionCombo >= COMBO_SHOW && sessionCombo % COMBO_STEP === 0) sfxCombo(); else sfxCorrect();
@@ -1182,7 +1203,7 @@ function renderDashboard(){
     <div class="filterrow" id="goalRow">
       ${DAILY_GOALS.map(g=>`<button type="button" class="filterchip${g.xp===dailyGoal()?' active':''}" data-goal="${g.xp}">${g.label} · ${g.xp} XP</button>`).join("")}
     </div>
-    <p style="color:var(--ink-dim);font-size:.78rem;margin:0;line-height:1.5">Bir tur (10 soru) yaklaşık 30-40 XP kazandırır. Bir günü kaçırdığında seri dondurma sessizce devreye girip serini korur; her ${FREEZE_EVERY} günlük seride bir tane kazanırsın.</p>
+    <p style="color:var(--ink-dim);font-size:.78rem;margin:0;line-height:1.5">Bir tur (10 soru) yaklaşık 30-40 XP kazandırır. Bir günü kaçırdığında seri dondurma sessizce devreye girip serini korur. Başlangıçta ${MAX_FREEZES} dondurman var; harcadıkça her ${FREEZE_EVERY} günlük seride bir tane geri kazanırsın (en fazla ${MAX_FREEZES} tane biriktirebilirsin).</p>
   </div>
   <div class="card">
     <h2 style="margin-top:0">Genel İlerleme (ustalık)</h2>

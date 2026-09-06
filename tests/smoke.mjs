@@ -155,6 +155,8 @@ try {
      tek harflik yazım hatası hesabı kalıcı kaybettiriyordu). Alan yoksa
      eski akış da çalışsın diye koşullu dolduruyoruz. */
   if(await page.locator("#authPass2").count()) await page.locator("#authPass2").fill("test1234");
+  kontrol("Kayıt alanları gerçek bir <form> içinde (şifre yöneticisi için)",
+    await page.locator("#authForm").count() === 1);
   await page.locator("#authSubmitBtn").click();
   await page.waitForSelector("#levelrow", {state:"visible", timeout: 10000});
   kontrol("Hesap oluşturulup uygulamaya girildi", await page.locator("#levelrow").isVisible());
@@ -356,8 +358,10 @@ try {
     const m = {};
     for(let i=0;i<3000;i++){
       const e = exerciseForGrammar("adj");
-      const n = e.prompt.match(/"([^"]+)"\s*\(([^)]+)\)/);
-      m[n[1]] = {cins:n[2], cevap:e.answer, ayniSik: e.options[0]===e.options[1], id:e.id};
+      /* Cinsiyet artık soruda değil, açıklamada. */
+      const isim = (e.prompt.match(/"([^"]+)"/) || [])[1];
+      const cins = (String(e.aciklama||"").match(/(dişil|eril|nötr) bir isim/) || [])[1];
+      m[isim] = {cins, cevap:e.answer, ayniSik: e.options[0]===e.options[1], id:e.id};
     }
     return m;
   });
@@ -481,6 +485,49 @@ try {
     !durum.kartVar || durum.kart === durum.etiket, JSON.stringify(durum));
 
   /* Mobilde HTML5 sürükle-bırak çalışmadığı için metin dokunmaya göre değişmeli. */
+  /* Cinsiyet artık soruda değil, cevaptan sonra veriliyor. */
+  const cinsiyet = await page.evaluate(()=>{
+    const out = {soruda:0, aciklamada:0, n:0};
+    for(const t of ["adj","art"]) for(let i=0;i<400;i++){
+      const e = exerciseForGrammar(t); out.n++;
+      if(/\((dişil|eril|nötr)\)/.test(e.prompt)) out.soruda++;
+      if(e.aciklama && /(dişil|eril|nötr) bir isim/.test(e.aciklama)) out.aciklamada++;
+    }
+    return out;
+  });
+  kontrol("Cinsiyet artık soru metninde verilmiyor", cinsiyet.soruda === 0, JSON.stringify(cinsiyet));
+  kontrol("Cinsiyet cevaptan sonra açıklamada veriliyor", cinsiyet.aciklamada === cinsiyet.n, JSON.stringify(cinsiyet));
+
+  /* Diyakritik zorunlu değil — kural ekranda yazıyor mu? */
+  await page.evaluate(()=>{ sessionQueue=[{type:"gram",data:"art"}]; sessionIdx=0; nextExercise(); });
+  await page.waitForSelector("#charRow");
+  kontrol("Diyakritik satırının altında 'zorunlu değil' notu var",
+    (await page.locator(".charnote").count()) > 0 &&
+    /zorunlu değil/.test(await page.locator(".charnote").innerText()));
+
+  /* Doğru ama diyakritiksiz yazılan cevapta nazik uyarı. */
+  const diy = await page.evaluate(async ()=>{
+    sessionQueue=[{type:"gram",data:"num"}]; sessionIdx=0;
+    currentEx = {id:"t1", kind:"type", prompt:"test", answer:"mâine", roDisplay:"mâine", needsRoChars:true};
+    renderExercise();
+    answer("maine", null);
+    await new Promise(r=>setTimeout(r,150));
+    const fb = document.getElementById('feedback');
+    return {metin: fb? fb.innerText : "", dogruMu: /Doğru!/.test(fb? fb.innerText : "")};
+  });
+  kontrol("Diyakritiksiz doğru cevap kabul ediliyor", diy.dogruMu, diy.metin.replace(/\n/g," "));
+  kontrol("Diyakritik eksikse yazım nazikçe hatırlatılıyor",
+    /Diyakritikler olmadan/.test(diy.metin), diy.metin.replace(/\n/g," "));
+
+  /* Seri dondurma metni başlangıç hediyesiyle tutarlı olmalı. */
+  await page.evaluate(()=>{ goHome(); });
+  await page.locator('.tab[data-tab="dash"]').click();
+  await page.waitForSelector(".statgrid");
+  const dashMetin = await page.locator("#app-root").innerText();
+  kontrol("Seri dondurma açıklaması başlangıç hediyesini de anlatıyor",
+    /Başlangıçta 2 dondurman var/.test(dashMetin),
+    (dashMetin.match(/Bir günü kaçırdığında[^\n]*/) || [""])[0].slice(0,120));
+
   kontrol("Dizme ipucu metni işaretçi türüne göre seçiliyor",
     /(sürükle|dokun)/.test(await page.evaluate(()=> ORDER_HINT)),
     await page.evaluate(()=> ORDER_HINT));
