@@ -88,7 +88,11 @@ function exerciseForVerb(v){
 function gramSec(list, topic, uygunMu){
   const idx = list.map((_,i)=>i).filter(i=> !uygunMu || uygunMu(list[i]));
   const ids = idx.map(i=> "gram_"+topic+"_"+i);
-  const sec = (typeof weightedSample==="function" ? weightedSample(ids,1)[0] : null) || pick(ids);
+  /* STATE yalnızca oturum açıldıktan sonra var; ustalık ağırlıklı seçim ona
+     bakıyor. Oturum dışında (önizleme/erken çağrı) çökmek yerine düz rastgele
+     seçime düşüyoruz — eski davranışın aynısı. */
+  const agirlikliSecilebilir = typeof weightedSample === "function" && typeof STATE !== "undefined" && STATE && STATE.mastery;
+  const sec = (agirlikliSecilebilir ? weightedSample(ids,1)[0] : null) || pick(ids);
   return [list[idx[ids.indexOf(sec)]], sec];
 }
 
