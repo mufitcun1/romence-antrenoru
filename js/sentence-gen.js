@@ -9,9 +9,17 @@
    olarak saklanıyor (otomatik/algoritmik Türkçe çekim ÜRETİLMİYOR —
    Türkçe iyelik/kip ekleri sesli uyuma bağlı olduğu için otomatik üretim
    riskli olurdu). */
+/* Türkçede dilbilgisel cinsiyet yok: "Buradalar." hem "Ei sunt aici." hem
+   "Ele sunt aici." demek. Kelime dizme alıştırmasında taşlar belirsizliği
+   çözüyordu ama ÇEVİRİ alıştırmasında ("… cümlesini Romence yaz") doğru yazan
+   kullanıcı yanlış sayılabiliyordu — 192 Türkçe cümlenin 64'ü belirsizdi.
+   Bu yüzden 3. şahıslarda Türkçe ipucuna cinsiyet etiketi ekliyoruz; aynı
+   gösterim veri dosyasındaki zamir listesinde de kullanılıyor ("o (erkek)"). */
 const SENT_SUBJECTS = [
-  {ro:"Eu", idx:0}, {ro:"Tu", idx:1}, {ro:"El", idx:2}, {ro:"Ea", idx:2},
-  {ro:"Noi", idx:3}, {ro:"Voi", idx:4}, {ro:"Ei", idx:5}, {ro:"Ele", idx:5},
+  {ro:"Eu", idx:0}, {ro:"Tu", idx:1},
+  {ro:"El", idx:2, trEtiket:"(erkek)"}, {ro:"Ea", idx:2, trEtiket:"(kadın)"},
+  {ro:"Noi", idx:3}, {ro:"Voi", idx:4},
+  {ro:"Ei", idx:5, trEtiket:"(erkekler)"}, {ro:"Ele", idx:5, trEtiket:"(kadınlar)"},
 ];
 // [eu, tu, el/ea, noi, voi, ei/ele] sırasıyla — a fi (durum/yer) kalıbı
 const FI_COMPLEMENTS = [
@@ -53,7 +61,10 @@ function genDynamicSentence(){
        (buradayım/kurstasın/evdeler gibi), ama el/ea (3. tekil şahıs) bu
        kalıpta hiç ek almıyor (Romence "este" de öyle) — "Orada." tek
        başına özne belirsiz kalıyor. Açıklık için "O " ekliyoruz. */
-    if(subj.idx===2) tr = "O " + tr;
+    if(subj.idx===2) tr = "O " + subj.trEtiket + " " + tr;
+    /* 3. çoğulda da özne yazılıyor: "Buradalar." tek başına ei/ele ayrımını
+       taşıyamıyor, "Onlar (kadınlar) buradalar." taşıyor. */
+    if(subj.idx===5) tr = "Onlar " + subj.trEtiket + " " + tr;
     tr = tr.charAt(0).toUpperCase()+tr.slice(1)+".";
     return {ro, tr};
   } else {
@@ -61,9 +72,32 @@ function genDynamicSentence(){
     const verbForm = aveaVerb[2][subj.idx];
     const ro = (neg? `${subj.ro} nu ${verbForm} ${o.ro}.` : `${subj.ro} ${verbForm} ${o.ro}.`);
     let tr = o.tr[subj.idx];
+    if(subj.trEtiket) tr = tr.replace(/^(Onun|Onların) /, "$1 " + subj.trEtiket + " ");
     if(neg) tr = tr.replace(" var"," yok");
     return {ro, tr: tr+"."};
   }
+}
+
+/* Cümle havuzlarında CÜMLE ORTASINDA büyük harfle geçen her kelime özel addır
+   (România, Turcia, Istanbul, Cluj, Ali, Ayșe, Ana…). Havuzlar büyüdükçe liste
+   kendiliğinden güncellenir; elle yazılan küçük liste yalnızca güvenlik ağıdır
+   (bir ad yalnızca cümle başında geçiyorsa taramayla yakalanamaz). */
+let _ozelAdlar = null;
+function ozelAdSeti(){
+  if(_ozelAdlar) return _ozelAdlar;
+  const s = new Set(["Ali","Ayșe","Ayşe","Ana","Arzu","Maria","România","Turcia","Istanbul","Cluj","București","Bucureşti"]);
+  [ (typeof FIXED_SENTENCES!=="undefined") ? FIXED_SENTENCES : null,
+    (typeof SENTENCES_A2 !=="undefined") ? SENTENCES_A2 : null,
+    (typeof SENTENCES_B1 !=="undefined") ? SENTENCES_B1 : null ].forEach(pool=>{
+    if(!pool) return;
+    pool.forEach(row=>{
+      String(row[0]).replace(/[.!?]+$/,"").split(/\s+/).forEach((w,i)=>{
+        const yalin = w.replace(/[,;:!?.]+$/,"");
+        if(i>0 && /^[A-ZĂÂÎȘȚŞŢ]/.test(yalin)) s.add(yalin);
+      });
+    });
+  });
+  _ozelAdlar = s; return s;
 }
 
 function exerciseForSentence(item){
@@ -87,7 +121,19 @@ function exerciseForSentence(item){
     if(dir==="ro2tr") return {id:item.id, kind:"type", prompt:`"${item.ro}" ne demek? (Türkçe yaz)`, hint:"Cümle — Çeviri", answer:item.tr, needsRoChars:false, roDisplay:item.ro};
     return {id:item.id, kind:"type", prompt:`"${item.tr}" cümlesini Romence yaz.`, hint:"Cümle — Çeviri", answer:item.ro, needsRoChars:true, roDisplay:item.ro};
   }
-  const cleanWords = item.ro.replace(/[.!?]+$/,'').split(' ').filter(Boolean);
+  /* TAŞLARI NÖTRLEŞTİRME
+     Eskiden taşlar cümledeki hâliyle basılıyordu: tek büyük harfli taş ilk
+     kelimeyi, virgül taşıyan taş kendi yerini ele veriyordu — bulmaca Romence
+     bilinmeden çözülebiliyordu (Eu · Turcia, · din · sunt · din · Istanbul).
+     Artık iç noktalama kırpılıyor ve cümle başındaki büyük harf küçültülüyor;
+     özel adlar (România, Ali…) büyük kalır, yoksa yazım yanlış öğretilir.
+     Cevap karşılaştırması norm() ile yapılıyor ve norm() büyük/küçük harf ile
+     noktalamayı zaten yok sayıyor; doğru yazılışı kullanıcı cevaptan sonra
+     "Yazılışı:" satırında görüyor. */
+  const ozel = ozelAdSeti();
+  const cleanWords = item.ro.replace(/[.!?]+$/,'').split(' ').filter(Boolean)
+    .map(w=> w.replace(/[,;:!?.]+$/,''))
+    .map((w,i)=> (i===0 && !ozel.has(w)) ? w.charAt(0).toLowerCase()+w.slice(1) : w);
   /* cue: hedef cümlenin Türkçesi — küçük pill yerine ayrı, büyük ve okunaklı
      bir kutuda gösteriliyor (bkz. .cuebox), çünkü tüm cümleyi anlaşılır
      boyutta görmek gerekiyor, tek kelimelik ipucu değil bu. */
