@@ -74,12 +74,20 @@ const LEVELS = {
   B1: { ready:false, ad:"B1" },
 };
 
-function level(){ return LEVELS[currentLevel] || LEVELS.A1; }
+/* Hazır olmayan bir seviye (data dosyası yüklenememişse) motora asla sızmamalı:
+   o kayıtta vocab/verbs/ex gibi alanlar yok ve ilk çağrıda TypeError atıp ekranı
+   hiç çizmeden donduruyor. Seviye okuyan üç fonksiyon da bu çözücüden geçiyor. */
+function seviyeKaydi(lvl){
+  const L = LEVELS[lvl];
+  return (L && L.ready) ? L : LEVELS.A1;
+}
+function level(){ return seviyeKaydi(currentLevel); }
+function seviyeHazir(lvl){ return !!(LEVELS[lvl] && LEVELS[lvl].ready); }
 
 /* Filtre listesi seviyeye göre değişiyor: A1'de dinleme var, A2'de onun yerine
    kalıp ifade. Ortak dört filtre her seviyede aynı sırada duruyor. */
 function filterOptsFor(lvl){
-  const L = LEVELS[lvl] || LEVELS.A1;
+  const L = seviyeKaydi(lvl);
   const opts = [
     {key:"mixed", label:"Karışık"},
     {key:"voc", label:"İsim / Kelime"},
@@ -93,7 +101,7 @@ function filterOptsFor(lvl){
 }
 
 function ratiosForFilter(filter, lvl){
-  const L = LEVELS[lvl] || LEVELS.A1;
+  const L = seviyeKaydi(lvl);
   if(filter==="voc")   return {vocRatio:1, verRatio:0, lisRatio:0, ifadeRatio:0, cumRatio:0};
   if(filter==="ver")   return {vocRatio:0, verRatio:1, lisRatio:0, ifadeRatio:0, cumRatio:0};
   if(filter==="gram")  return {vocRatio:0, verRatio:0, lisRatio:0, ifadeRatio:0, cumRatio:0};
@@ -1188,6 +1196,11 @@ function switchTab(tab){
     persist();
   }
   activeTab = tab;
+  /* Senkron bitişi, çıkış/giriş ve misafir akışı gibi yollar switchTab'ı doğrudan
+     çağırıyor. Aktif seviye hazır değilse sekme ekranı yerine "yakında" ekranı
+     yeniden çizilmeli — yoksa o seviye seçiliyken A1 içeriği çiziliyordu.
+     selectLevel bu dalda switchTab'ı çağırmaz, döngü olmaz. */
+  if(!seviyeHazir(currentLevel)){ selectLevel(currentLevel); return; }
   updateGameBar();
   document.querySelectorAll('.tab').forEach(t=> t.classList.toggle('active', t.getAttribute('data-tab')===tab));
   if(tab==="practice") renderPracticeHome();

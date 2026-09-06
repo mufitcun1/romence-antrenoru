@@ -356,7 +356,9 @@ function mergeStates(local, remote){
   const seen = new Set();
   out.testHistory = (local.testHistory || []).concat(remote.testHistory || [])
     .filter(h => {
-      const k = h.date + "|" + h.score + "|" + h.total;
+      /* Seviye anahtarın parçası: aynı gün aynı skorla alınan A1 ve A2 sınavları
+         farklı kayıtlardır. Eski kayıtlarda level alanı yok, hepsi A1'di. */
+      const k = (h.level || "A1") + "|" + h.date + "|" + h.score + "|" + h.total;
       if(seen.has(k)) return false;
       seen.add(k); return true;
     })
