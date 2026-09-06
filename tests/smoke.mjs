@@ -258,10 +258,80 @@ try {
   kontrol("İlerleme ekranı A2 etiketiyle açıldı", dashMetni.includes("A2"), dashMetni.split("\n")[1] || "");
   kontrol("İlerleme ekranında A2 kelime sayısı (516) görünüyor", dashMetni.includes("516"));
 
-  /* ---------- 6. B1 hâlâ yakında ---------- */
-  console.log("\n6) B1");
+  /* ---------- 6. B1 seviyesi ---------- */
+  console.log("\n6) B1 seviyesi");
   await page.locator('.levelchip[data-level="B1"]').click();
-  kontrol("B1 hâlâ 'yakında' ekranı gösteriyor", (await page.locator("#app-root").innerText()).includes("hazırlanıyor"));
+  /* Önceki bölüm İlerleme sekmesinde bitiyor; seviye değişince aktif sekme
+     korunuyor, o yüzden Pratik'e dönmeden #startBtn görünmez. */
+  await page.locator('.tab[data-tab="practice"]').click();
+  await page.waitForSelector("#startBtn", {timeout: 5000});
+  kontrol("B1 seçilince sekmeler görünür (artık 'yakında' değil)", await page.locator("#tabsRow").isVisible());
+  const b1Filtreler = await page.locator("#filterRow .filterchip").allTextContents();
+  kontrol("B1 filtrelerinde Zıt Anlam var", b1Filtreler.some(t=>t.includes("Zıt")), b1Filtreler.join(" | "));
+  kontrol("B1 filtrelerinde Dinleme YOK", !b1Filtreler.some(t=>t.includes("Dinleme")));
+
+  await page.locator("#startBtn").click();
+  await page.waitForSelector(".qtext");
+  const b1Kuyruk = await page.evaluate(()=> sessionQueue.map(x=>x.type));
+  kontrol("B1 turu 10 soru üretti", b1Kuyruk.length === 10, `tipler: ${[...new Set(b1Kuyruk)].join(",")}`);
+  const b1Idler = await page.evaluate(()=> sessionQueue
+      .filter(x=> x.type !== "gram")
+      .map(x=> x.data && (x.data.id || x.data[x.data.length-1]))
+      .filter(v=> typeof v === "string" && v.includes("_")));
+  kontrol("B1 turundaki id'lerin tamamı _b1_ taşıyor",
+    b1Idler.length > 0 && b1Idler.every(id=> id.includes("_b1_")), `örnek: ${b1Idler.slice(0,3).join(", ")}`);
+
+  /* Karma tasarım iddiasını MADDE BAZINDA doğrula. Önceki sürüm yalnızca
+     "kuyrukta bir type sorusu var mı" diye bakıyordu; fiil soruları zaten
+     daima type olduğu için klitik/gendat/türetme yanlışlıkla çoktan seçmeliye
+     çevrilse bile o kontrol geçiyordu. */
+  const tasarim = await page.evaluate(()=>{
+    const oncesi = new Set(Object.keys(STATE.mastery));
+    const r = {
+      klitik: exerciseForGrammarB1("klitik").kind,
+      gendat: exerciseForGrammarB1("gendat").kind,
+      turetme: exerciseForGrammarB1("turetme").kind,
+      edat: exerciseForGrammarB1("edat").kind,
+      fiil: exerciseForVerbB1(VERBS_B1[0]).kind,
+      kelimeYeni: exerciseForVocabB1(VOCAB_B1[0]).kind,
+      klitikStrict: exerciseForGrammarB1("klitik").strictHyphen === true,
+      klitikCumleGosteriyor: (()=>{ const q=exerciseForGrammarB1("klitik");
+        return !!q.roDisplay && q.roDisplay !== q.answer; })(),
+      cumleNoktalamasiz: (()=>{ const q=exerciseForSentenceB1({ro:"Am venit acasă.",tr:"Eve geldim.",id:"x"});
+        return !q.words.some(w=>/[.!?]$/.test(w)); })(),
+    };
+    Object.keys(STATE.mastery).forEach(k=>{ if(!oncesi.has(k)) delete STATE.mastery[k]; });
+    return r;
+  });
+  kontrol("Klitik / genitiv-dativ / türetme YAZDIRILIYOR",
+    tasarim.klitik==="type" && tasarim.gendat==="type" && tasarim.turetme==="type",
+    `klitik=${tasarim.klitik} gendat=${tasarim.gendat} turetme=${tasarim.turetme}`);
+  kontrol("Edat kalıbı ve yeni kelime çoktan seçmeli kalıyor",
+    tasarim.edat==="mc" && tasarim.kelimeYeni==="mc", `edat=${tasarim.edat} kelime=${tasarim.kelimeYeni}`);
+  kontrol("Fiil çekimi daima yazdırılıyor", tasarim.fiil==="type", tasarim.fiil);
+  kontrol("Klitik sorusu kısa çizgiye duyarlı işaretli", tasarim.klitikStrict);
+  kontrol("Klitik/gendat/türetme cevabı düzeltilmiş CÜMLEYİ gösteriyor", tasarim.klitikCumleGosteriyor);
+  kontrol("Cümle dizmede noktalama kırpılıyor (son kelimeyi ele vermesin)", tasarim.cumleNoktalamasiz);
+
+  /* Kullanıcı refleksle "-l" yazarsa haksız yere reddedilmemeli. */
+  const tireKirpma = await page.evaluate(()=>{
+    const kirp = x => normTire(String(x||"").replace(/^-+|-+$/g,""));
+    return kirp("-l")===kirp("l") && normTire("mi-o")!==normTire("mio");
+  });
+  kontrol("Baş/son tire kırpılıyor ama iç tire anlamlı kalıyor", tireKirpma);
+
+  const b1Idler2 = await page.evaluate(()=> VERBS_B1.length);
+  kontrol("B1 fiil havuzu dolu", b1Idler2 > 200, `${b1Idler2} fiil`);
+
+  const b1Bitti = await turuBitir(page, 25, konsolHatalari);
+  kontrol("B1 turu sonuç ekranıyla bitti", b1Bitti);
+  await page.locator("#homeBtn").click();
+
+  await page.locator('.tab[data-tab="dash"]').click();
+  await page.waitForSelector(".statgrid");
+  const b1Dash = await page.locator("#app-root").innerText();
+  kontrol("B1 ilerleme ekranı açıldı", b1Dash.includes("B1"), b1Dash.split("\n")[1] || "");
+  kontrol("İlerleme ekranında B1 kelime sayısı (520) görünüyor", b1Dash.includes("520"));
 
   /* ---------- 7. A1 ilerlemesi bozulmadı ---------- */
   console.log("\n7) Veri ayrımı");

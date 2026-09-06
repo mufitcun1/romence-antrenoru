@@ -1,4 +1,4 @@
-node_modules/
+node_modules
 
 # Sohbet sırasında üretilen ekran görüntüleri/önizlemeler buraya düşüyor.
 # Uygulamanın parçası değiller ve depo herkese açık olduğu için (GitHub Pages

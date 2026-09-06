@@ -71,7 +71,31 @@ const LEVELS = {
     dashWeights: {voc:0.45, ver:0.25, cum:0.15, ifade:0.15},
     testAciklama: "24 soruluk A2 denemesi: kelime bilgisi, fiil çekimi (şimdiki zaman · ortaç · conjunctiv), gramer (dativ, işaret ve ilgi zamirleri, emir kipi, edat-hâl, karşılaştırma, olumsuzluk, bağlaçlar), kalıp ifadeler ve cümle kurma.",
   },
-  B1: { ready:false, ad:"B1" },
+  B1: {
+    /* data-b1.js yüklenmemişse seviye kapalı kalır. */
+    /* Dosyanın SONUNDA tanımlanan bir global'e bakıyoruz: data-b1.js
+       ortasında bir hata olsa VOCAB_B1 tanımlı olurdu ama VERBS_B1 olmazdı
+       ve ready yanlışlıkla true kalırdı. */
+    ready: typeof GRAMMAR_LABELS_B1 !== "undefined",
+    ad: "B1",
+    vocab:      ()=> VOCAB_B1,
+    verbs:      ()=> VERBS_B1,
+    sentences:  ()=> SENTENCES_B1,
+    themeNames: ()=> THEME_NAMES_B1,
+    topics:     ()=> GRAMMAR_TOPICS_B1,
+    /* "expressions" yuvası B1'de zıt anlam / türetme çiftlerini taşıyor —
+       filtre çubuğunda 🔄 Zıt Anlam olarak görünür. */
+    expressions: ()=> ANTONIM_B1,
+    dynamicSentence: null,
+    /* B1 kelimelerinin ses dosyası yok (mevcut 332 mp3 A1'e ait) ve ILR
+       sınavının yarısı sözlü; ses üretilince burayı true yapmak yeterli. */
+    listening: false,
+    ex: ()=> ({voc:exerciseForVocabB1, ver:exerciseForVerbB1, lis:null,
+               cum:exerciseForSentenceB1, gram:exerciseForGrammarB1, ifade:exerciseForAntonimB1}),
+    /* Gramer ağırlığı ILR B1 sınavının 30 maddelik gramer bloğundan geliyor. */
+    dashWeights: {voc:0.40, ver:0.25, cum:0.15, ifade:0.20},
+    testAciklama: "24 soruluk B1 denemesi: kelime bilgisi, fiil çekimi (imperfect · condițional-optativ), gramer (klitik zamirler, genitiv-dativ, edat kalıpları, kelime türetme), zıt anlam/türetme ve cümle kurma. Gramer ağırlığı ILR B1 sınavının kendi dağılımına göre kuruldu.",
+  },
 };
 
 /* Hazır olmayan bir seviye (data dosyası yüklenememişse) motora asla sızmamalı:
@@ -86,6 +110,10 @@ function seviyeHazir(lvl){ return !!(LEVELS[lvl] && LEVELS[lvl].ready); }
 
 /* Filtre listesi seviyeye göre değişiyor: A1'de dinleme var, A2'de onun yerine
    kalıp ifade. Ortak dört filtre her seviyede aynı sırada duruyor. */
+/* "ifade" yuvası seviyeye göre farklı şey taşıyor: A2'de kalıp ifade,
+   B1'de zıt anlam/türetme çiftleri. Etiketi tek yerden veriyoruz. */
+function ifadeAdi(lvl){ return lvl==="B1" ? "zıt anlam" : "kalıp ifade"; }
+
 function filterOptsFor(lvl){
   const L = seviyeKaydi(lvl);
   const opts = [
@@ -95,7 +123,7 @@ function filterOptsFor(lvl){
     {key:"gram", label:"Cümle / Gramer"},
   ];
   if(L.listening) opts.push({key:"lis", label:"🎧 Dinleme"});
-  if(L.expressions) opts.push({key:"ifade", label:"💬 Kalıp İfade"});
+  if(L.expressions) opts.push({key:"ifade", label: lvl==="B1" ? "🔄 Zıt Anlam" : "💬 Kalıp İfade"});
   opts.push({key:"cum", label:"📝 Cümle Kurma"});
   return opts;
 }
@@ -665,14 +693,21 @@ function insertChar(inp, ch){
 const MAX_ATTEMPTS = 2; // her soruda iki cevap hakkı — ilk yanlışta "tekrar dene" diyoruz
 
 function answer(val, btnEl){
-  const correct = norm(val)===norm(currentEx.answer);
+  /* strictHyphen işaretli sorularda (B1 klitik) kısa çizgi anlamlıdır. */
+  /* strictHyphen: klitik cevaplarında İÇ kısa çizgi anlamlıdır ("mi-o" ≠ "mio").
+     Ama soru ekranda "Nu-______" diye basılı olduğu için kullanıcı refleksle
+     "-l" yazabiliyor; baş/son tireyi kırpmazsak bunu haksız yere reddederiz. */
+  const esitle = currentEx.strictHyphen
+    ? (x => normTire(String(x||"").replace(/^-+|-+$/g,"")))
+    : norm;
+  const correct = esitle(val)===esitle(currentEx.answer);
   const final = markResult(correct);
   if(currentEx.kind==="mc"){
     if(final){
       document.querySelectorAll('#opts .opt').forEach(b=>{
         b.disabled = true;
         const v = decodeURIComponent(b.getAttribute('data-val'));
-        if(norm(v)===norm(currentEx.answer)) b.classList.add('correct');
+        if(esitle(v)===esitle(currentEx.answer)) b.classList.add('correct');
         else if(b===btnEl) b.classList.add('wrong');
       });
     } else if(btnEl){
@@ -767,9 +802,13 @@ function markResult(correct, note, noRetry){
        kısa sürede görünmez olur. */
     const comboChip = (correct && sessionCombo >= COMBO_SHOW)
       ? ` <span class="combochip${sessionCombo % COMBO_STEP === 0 ? ' hit' : ''}">&#128293; ${sessionCombo}</span>` : "";
+    /* Kural açıklaması cevaptan SONRA gösterilir. Soru sorulurken rozete
+       yazılsaydı (hâl, kişi, türetme eki) sorunun ölçtüğü şeyi vermiş olurduk. */
+    const kuralLine = currentEx.aciklama
+      ? `<div style="margin-top:4px;color:var(--ink-dim);font-size:.85rem">${currentEx.aciklama}</div>` : "";
     fb.innerHTML = correct
-      ? `<div class="ficon">✓</div><div class="ftext"><b>Doğru!</b>${comboChip}${spellingLine}</div>`
-      : `<div class="ficon">✕</div><div class="ftext"><b>Doğru cevap:</b> ${currentEx.answer}${(currentEx.roDisplay && currentEx.roDisplay!==currentEx.answer) ? spellingLine : ""}</div>`;
+      ? `<div class="ficon">✓</div><div class="ftext"><b>Doğru!</b>${comboChip}${spellingLine}${kuralLine}</div>`
+      : `<div class="ficon">✕</div><div class="ftext"><b>Doğru cevap:</b> ${currentEx.answer}${(currentEx.roDisplay && currentEx.roDisplay!==currentEx.answer) ? spellingLine : ""}${kuralLine}</div>`;
     if(correct){
       if(sessionCombo >= COMBO_SHOW && sessionCombo % COMBO_STEP === 0) sfxCombo(); else sfxCorrect();
     } else {
@@ -909,7 +948,8 @@ function summarizeByCat(results){
 }
 function renderTestResult(pct){
   const last = STATE.testHistory[STATE.testHistory.length-1];
-  const catLabel = {voc:"Kelime",ver:"Fiil",gram:"Gramer",lis:"Dinleme",ifade:"Kalıp İfade",cum:"Cümle"};
+  const ifadeEtiket = (last.level||currentLevel)==="B1" ? "Zıt Anlam" : "Kalıp İfade";
+  const catLabel = {voc:"Kelime",ver:"Fiil",gram:"Gramer",lis:"Dinleme",ifade:ifadeEtiket,cum:"Cümle"};
   let rows="";
   Object.keys(last.byCategory).forEach(k=>{
     const c=last.byCategory[k];
@@ -964,12 +1004,14 @@ function renderPracticeHome(){
   const filterLabel = {
     mixed: L.listening
       ? "kelime, fiil çekimi, gramer, dinleme ve cümle kurma karışık"
-      : "kelime, fiil çekimi, gramer, kalıp ifade ve cümle kurma karışık",
+      : `kelime, fiil çekimi, gramer, ${ifadeAdi(currentLevel)} ve cümle kurma karışık`,
     voc:"sadece isim/kelime bilgisi",
     ver:"sadece fiil çekimi",
     gram:"sadece cümle kurulumu/gramer",
     lis:"sadece dinleme (kulakla anlama)",
-    ifade:"sadece kalıp ifadeler (günlük konuşma blokları)",
+    ifade: currentLevel==="B1"
+      ? "sadece zıt anlam ve türetme (önek sistemi — sınavın türetme bölümü)"
+      : "sadece kalıp ifadeler (günlük konuşma blokları)",
     cum: L.dynamicSentence
       ? "sadece cümle kurma (sabit ders cümleleri + sınırsız yeni kombinasyon)"
       : "sadece cümle kurma (ders cümleleri)"
@@ -1081,7 +1123,7 @@ function renderDashboard(){
     <div class="barwrap"><div class="bar" style="width:${fs.pct}%"></div></div>
     <div class="row" style="margin-top:12px"><span>Cümle kurma${L.dynamicSentence ? " (sabit havuz)" : ""}</span><span>%${cs.pct} · ustalaşılan ${cs.mastered}/${cs.total}</span></div>
     <div class="barwrap"><div class="bar" style="width:${cs.pct}%"></div></div>
-    ${ifadeIds.length ? `<div class="row" style="margin-top:12px"><span>Kalıp ifadeler</span><span>%${is.pct} · ustalaşılan ${is.mastered}/${is.total}</span></div>
+    ${ifadeIds.length ? `<div class="row" style="margin-top:12px"><span>${currentLevel==="B1" ? "Zıt anlam / türetme" : "Kalıp ifadeler"}</span><span>%${is.pct} · ustalaşılan ${is.mastered}/${is.total}</span></div>
     <div class="barwrap"><div class="bar" style="width:${is.pct}%"></div></div>` : ""}
     <p style="color:var(--ink-dim);font-size:.78rem;margin:12px 0 0">"Ustalık" bir kelime/fiili/cümleyi üst üste 3 kez doğru bilince artar — bu yüzden yavaş ama kalıcı ilerler. "Karşılaşılan" ise en az bir kez soruldu demek. Dinamik (sınırsız) cümleler her seferinde yeni olduğu için ustalık takibine dahil değil, sadece pratik amaçlı.</p>
   </div>
@@ -1236,7 +1278,7 @@ function selectLevel(lvl){
     root().innerHTML = `<div class="card" style="text-align:center;padding:40px 18px">
       <div class="pill">Yakında</div>
       <div class="qtext" style="margin-top:10px">${lvl} seviyesi hazırlanıyor</div>
-      <p style="color:var(--ink-dim);margin-top:10px;line-height:1.5">Şu an yalnızca A1 seviyesi tam kapsamlı ve kullanıma açık.
+      <p style="color:var(--ink-dim);margin-top:10px;line-height:1.5">A1, A2 ve B1 seviyeleri kullanıma açık; bu seviyenin verisi yüklenemedi.
       A1'i bitirdikçe ${lvl} kelime, fiil çekimi, gramer, dinleme, cümle kurma ve deneme sınavı içerikleri de buraya eklenecek —
       aynı tekrar ve ilerleme sistemiyle çalışacak.</p>
       <button class="btn secondary" style="margin-top:18px" onclick="selectLevel('A1')">A1'e Dön</button>
