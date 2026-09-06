@@ -151,6 +151,10 @@ try {
   await page.waitForSelector("#authDisplay", {timeout: 5000});
   await page.locator("#authUser").fill("testkullanici");
   await page.locator("#authPass").fill("test1234");
+  /* Kayıt formunda şifre tekrar alanı var (kurtarma yolu olmayan bir hesapta
+     tek harflik yazım hatası hesabı kalıcı kaybettiriyordu). Alan yoksa
+     eski akış da çalışsın diye koşullu dolduruyoruz. */
+  if(await page.locator("#authPass2").count()) await page.locator("#authPass2").fill("test1234");
   await page.locator("#authSubmitBtn").click();
   await page.waitForSelector("#levelrow", {state:"visible", timeout: 10000});
   kontrol("Hesap oluşturulup uygulamaya girildi", await page.locator("#levelrow").isVisible());
@@ -341,6 +345,145 @@ try {
   kontrol("A1 ilerleme kayıtları duruyor", a1Kayit.length > 0, `${a1Kayit.length} kayıt`);
   kontrol("A2 ilerlemesi ayrı anahtarlarla tutuluyor", a2Kayit.length > 0, `${a2Kayit.length} kayıt`);
   kontrol("A1 ve A2 anahtarları çakışmıyor", a1Kayit.every(k=> !a2Kayit.includes(k)));
+
+  /* ---------- 7b. Kalite kontrol turunda bulunan hatalar ----------
+     Bu bölümdeki her kontrol, 6 Eylül 2026 A1 kalite kontrol turunda tespit
+     edilen somut bir hataya karşılık gelir; hepsi madde bazında iddia eder. */
+  console.log("\n7b) Kalite kontrol düzeltmeleri");
+  await page.evaluate(()=> selectLevel("A1"));
+
+  const sifat = await page.evaluate(()=>{
+    const m = {};
+    for(let i=0;i<3000;i++){
+      const e = exerciseForGrammar("adj");
+      const n = e.prompt.match(/"([^"]+)"\s*\(([^)]+)\)/);
+      m[n[1]] = {cins:n[2], cevap:e.answer, ayniSik: e.options[0]===e.options[1], id:e.id};
+    }
+    return m;
+  });
+  const sifatBeklenen = {"casă":"mică","fată":"frumoasă","floare":"frumoasă","mașină":"nouă","carte":"veche",
+                         "copil":"mic","câine":"bun","om":"înalt","frate":"tânăr","parc":"frumos"};
+  const sifatYanlis = Object.keys(sifatBeklenen).filter(k=> !sifat[k] || sifat[k].cevap !== sifatBeklenen[k]);
+  kontrol("Sıfat uyumunda dişil isim dişil biçimi ister", sifatYanlis.length === 0,
+    sifatYanlis.map(k=> `${k}: ${sifat[k] && sifat[k].cevap}`).join(", "));
+  kontrol("Hiçbir sıfat maddesinde iki şık aynı değil",
+    Object.values(sifat).every(v=> !v.ayniSik));
+  kontrol("Gramer maddeleri konu başına tek id paylaşmıyor",
+    new Set(Object.values(sifat).map(v=>v.id)).size === Object.keys(sifat).length);
+
+  kontrol("a costa 2. tekil şahıs 'coști'",
+    await page.evaluate(()=> VERBS.find(v=>v[0]==="a costa")[2][1]) === "coști");
+  kontrol("niciodată'lı cümlede 'nu' var",
+    /dar tu nu ești niciodată acasă/.test(await page.evaluate(()=> FIXED_SENTENCES[34][0])));
+
+  const tas = await page.evaluate(()=>{
+    const s = FIXED_SENTENCES[8];
+    const e = exerciseForSentence({ro:s[0], tr:s[1], id:s[2]});
+    return {w:e.words, a:e.answer, ro:e.roDisplay, esit: norm(e.words.slice().join(" ")).split(" ").sort().join()===norm(e.answer).split(" ").sort().join()};
+  });
+  kontrol("Dizme taşlarında iç noktalama yok (yeri ele vermiyor)",
+    !tas.w.some(w=> /[,;:]/.test(w)), tas.w.join(" "));
+  kontrol("Dizme taşlarında cümle başı büyük harfi ele vermiyor",
+    tas.w.includes("eu") && !tas.w.includes("Eu"), tas.w.join(" "));
+  kontrol("Özel adlar taşlarda büyük harfle kalıyor",
+    tas.w.includes("Turcia") && tas.w.includes("Istanbul"), tas.w.join(" "));
+  kontrol("Doğru yazılış (noktalamalı) hâlâ gösteriliyor",
+    tas.ro === "Eu sunt din Turcia, din Istanbul.", tas.ro);
+  kontrol("Nötrleştirilen taşlar cevapla hâlâ eşleşiyor", tas.esit);
+
+  const belirsiz = await page.evaluate(()=>{
+    const m = new Map();
+    for(let i=0;i<8000;i++){ const s = genDynamicSentence();
+      if(!m.has(s.tr)) m.set(s.tr, new Set());
+      m.get(s.tr).add(s.ro); }
+    return [...m.entries()].filter(([,v])=> v.size>1).map(([k,v])=> k+" -> "+[...v].join(" / "));
+  });
+  kontrol("Dinamik cümlelerde çift Romence karşılıklı Türkçe cümle yok",
+    belirsiz.length === 0, belirsiz.slice(0,2).join(" | "));
+
+  const celdirici = await page.evaluate(()=>{
+    const fiilMi = ro => /^a\s/.test(ro);
+    let ayniSik = 0, turKarisik = 0, mc = 0;
+    for(let i=0;i<3000;i++){
+      const v = VOCAB[Math.floor(Math.random()*VOCAB.length)];
+      const e = exerciseForVocab(v);
+      if(e.kind !== "mc") continue;
+      mc++;
+      if(new Set(e.options.map(norm)).size < e.options.length) ayniSik++;
+      if(/ne demek/.test(e.prompt)){
+        const satirlar = e.options.map(o=> VOCAB.find(x=> x[3]===o)).filter(Boolean);
+        if(satirlar.length===e.options.length && new Set(satirlar.map(x=>fiilMi(x[2]))).size>1) turKarisik++;
+      }
+    }
+    const bag = VOCAB.find(x=> x[2]==="și");
+    const kumeler = new Set();
+    for(let i=0;i<200;i++) kumeler.add(exerciseForVocab(bag).options.slice().sort().join("|"));
+    return {ayniSik, turKarisik, mc, kume: kumeler.size};
+  });
+  kontrol("Hiçbir çoktan seçmelide aynı şık iki kez yok", celdirici.ayniSik === 0,
+    `${celdirici.ayniSik}/${celdirici.mc}`);
+  kontrol("Çeldiriciler cevapla aynı sözcük türünden", celdirici.turKarisik === 0,
+    `${celdirici.turKarisik} karışık soru`);
+  kontrol("Dört kelimelik temada şık kümesi çeşitleniyor", celdirici.kume > 2,
+    `${celdirici.kume} farklı küme`);
+
+  kontrol("Çok karşılıklı gloss'ta tek karşılık da kabul ediliyor",
+    await page.evaluate(()=> anlamSecenekleri("amca/dayı").includes("amca")));
+  kontrol("Ayırt edici parantez korunuyor (o (erkek) -> 'o' kabul edilmiyor)",
+    await page.evaluate(()=> !anlamSecenekleri("o (erkek)").includes("o")));
+
+  /* Sınavda ikinci hak yok: yanlış cevap sonrası soru kapanmalı. */
+  await page.evaluate(()=> selectLevel("A1"));
+  await page.locator('.tab[data-tab="test"]').click();
+  await page.waitForSelector("#startTestBtn, #testStartBtn, .btn");
+  const sinavTekHak = await page.evaluate(async ()=>{
+    startTest();
+    await new Promise(r=> setTimeout(r, 300));
+    /* Doğru olmayan bir cevap üretip markResult'ın soruyu kapattığını görüyoruz. */
+    const oncekiIdx = sessionIdx;
+    markResult(false);
+    return {kapandi: !!currentEx._done, testMode};
+  });
+  kontrol("Deneme sınavında yanlış cevap ikinci hak vermiyor",
+    sinavTekHak.kapandi === true, JSON.stringify(sinavTekHak));
+  await page.evaluate(()=>{ testMode=false; testResults=[]; sessionQueue=[]; sessionIdx=0; goHome(); });
+
+  /* Sınav bonusu başarıya oranlı olmalı — sınavı atlayarak XP toplanamasın. */
+  const sinavXp = await page.evaluate(()=>{
+    const yedek = {c:sessionScore.correct, t:sessionScore.total, x:sessionXp};
+    sessionScore = {correct:1, total:24}; sessionXp = 0; sessionFirstOfDay = false;
+    grantSessionEndXP(true); const dusuk = sessionXp;
+    sessionScore = {correct:24, total:24}; sessionXp = 0;
+    grantSessionEndXP(true); const yuksek = sessionXp;
+    sessionScore = {correct:yedek.c, total:yedek.t}; sessionXp = yedek.x;
+    return {dusuk, yuksek};
+  });
+  kontrol("Sınav bonusu başarıya oranlı", sinavXp.dusuk < sinavXp.yuksek,
+    `1/24 -> ${sinavXp.dusuk} XP, 24/24 -> ${sinavXp.yuksek} XP`);
+
+  /* Erişilebilirlik: sekmeler klavyeyle odaklanabilir ve sekme rolü taşımalı. */
+  const sekme = await page.evaluate(()=> [...document.querySelectorAll('.tab')].map(t=>({
+    rol:t.getAttribute('role'), ti:t.tabIndex, sec:t.getAttribute('aria-selected')})));
+  kontrol("Sekmeler role=tab ve klavyeyle odaklanabilir",
+    sekme.length===3 && sekme.every(t=> t.rol==="tab" && t.ti>=0), JSON.stringify(sekme));
+  await page.locator('.tab[data-tab="dash"]').focus();
+  await page.keyboard.press("Enter");
+  await page.waitForTimeout(400);
+  kontrol("Sekme klavyeyle (Enter) değiştirilebiliyor",
+    await page.locator(".statgrid").count() > 0);
+
+  /* Bulut durumu tek kaynaktan: üst bar ile hesap kartı aynı metni gösterir. */
+  const durum = await page.evaluate(()=>{
+    const kart = document.getElementById('syncCardStatus');
+    return {kartVar: !!kart, kart: kart? kart.innerHTML.trim():"", etiket: syncStatusLabel().trim()};
+  });
+  kontrol("Hesap kartındaki bulut durumu tek kaynaktan geliyor",
+    !durum.kartVar || durum.kart === durum.etiket, JSON.stringify(durum));
+
+  /* Mobilde HTML5 sürükle-bırak çalışmadığı için metin dokunmaya göre değişmeli. */
+  kontrol("Dizme ipucu metni işaretçi türüne göre seçiliyor",
+    /(sürükle|dokun)/.test(await page.evaluate(()=> ORDER_HINT)),
+    await page.evaluate(()=> ORDER_HINT));
 
   /* ---------- 8. Konsol ---------- */
   console.log("\n8) Konsol");
